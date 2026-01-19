@@ -23,6 +23,15 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Asset/AssetSearchTest.php`: valida busca de ativos por ticker/nome, filtros e limit.
 - `tests/Feature/Asset/AssetShowTest.php`: valida detalhe de ativo e respostas 404/401.
 
+## Consolidated (V4)
+
+- `tests/Feature/Consolidated/ConsolidatedIndexTest.php`: valida listagem de posicoes do usuario e filtros basicos.
+- `tests/Feature/Consolidated/ConsolidatedShowTest.php`: valida acesso a posicao propria e bloqueio de terceiros.
+- `tests/Feature/Consolidated/ConsolidatedSummaryTest.php`: valida resumo das posicoes e exclusao de fechadas.
+- `tests/Feature/Consolidated/ConsolidatedTransactionStoreTest.php`: valida criacao de transacoes e erro de venda sem saldo.
+- `tests/Feature/Consolidated/ConsolidatedTransactionUpdateTest.php`: valida atualizacao de transacoes e recalc do consolidado.
+- `tests/Feature/Consolidated/ConsolidatedTransactionDestroyTest.php`: valida remocao de transacoes e cleanup do consolidado.
+
 ## Health
 
 - `tests/Feature/HealthCheckTest.php`: valida `GET /api/health` com resposta de sucesso.

@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AssetController;
+use App\Http\Controllers\Api\ConsolidatedController;
+use App\Http\Controllers\Api\ConsolidatedTransactionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,6 +38,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/popular', [AssetController::class, 'popular'])->name('popular');
         Route::get('/{companyTicker}', [AssetController::class, 'show'])->name('show');
     });
+
+    Route::get('/consolidated/summary', [ConsolidatedController::class, 'summary'])->name('consolidated.summary');
+    Route::get('/consolidated', [ConsolidatedController::class, 'index'])->name('consolidated.index');
+    Route::get('/consolidated/{consolidated}', [ConsolidatedController::class, 'show'])->name('consolidated.show');
+
+    Route::post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
+        ->name('consolidated.transactions.store');
+    Route::put('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'update'])
+        ->name('consolidated.transactions.update');
+    Route::delete('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'destroy'])
+        ->name('consolidated.transactions.destroy');
 });
 
 /*

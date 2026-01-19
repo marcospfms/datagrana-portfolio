@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\Consolidated;
 use App\Policies\AccountPolicy;
+use App\Policies\ConsolidatedPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Account::class, AccountPolicy::class);
+        Gate::policy(Consolidated::class, ConsolidatedPolicy::class);
         $this->configureDefaults();
         $this->loadMigrations();
     }

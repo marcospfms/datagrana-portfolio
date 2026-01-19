@@ -43,10 +43,6 @@ class Account extends Model
 
     public function hasActivePositions(): bool
     {
-        if (!class_exists(Consolidated::class)) {
-            return false;
-        }
-
         return $this->consolidated()->where('closed', false)->exists();
     }
 
