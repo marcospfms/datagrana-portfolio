@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
 class BaseController extends Controller
 {
+    use AuthorizesRequests;
     protected function sendResponse(mixed $result, ?string $message = null, int $code = 200): JsonResponse
     {
         return response()->json([

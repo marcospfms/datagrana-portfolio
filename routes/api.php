@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AccountController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Authentication
+| Authentication (V1)
 |--------------------------------------------------------------------------
 */
+
 Route::prefix('auth')->group(function () {
     Route::post('/google', [AuthController::class, 'google'])->name('auth.google');
 
@@ -16,6 +18,16 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('auth.logout-all');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Core (V2)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/banks', [AccountController::class, 'banks'])->name('banks.index');
+    Route::apiResource('accounts', AccountController::class);
 });
 
 /*

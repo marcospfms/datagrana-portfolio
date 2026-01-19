@@ -32,9 +32,6 @@ class UserFactory extends Factory
             'status' => true,
             'google_id' => fake()->unique()->numerify('############'),
             'photo' => fake()->imageUrl(200, 200, 'people'),
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
         ];
     }
 
@@ -59,18 +56,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'google_id' => null,
-        ]);
-    }
-
-    /**
-     * Indicate that the model has two-factor authentication configured.
-     */
-    public function withTwoFactor(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => encrypt('secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
-            'two_factor_confirmed_at' => now(),
         ]);
     }
 }
