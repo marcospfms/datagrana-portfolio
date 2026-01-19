@@ -22,9 +22,6 @@ return new class extends Migration
             $table->rememberToken();
             $table->text('google_id')->nullable();
             $table->timestamps();
-
-            $table->index('google_id');
-            $table->index('status');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
