@@ -131,3 +131,4 @@ Use os testes existentes em `tests/Feature/Api` como base (padrão: `setUp()` co
 - [ ] Testar autenticação (401)
 - [ ] Se houver pivot: testar attach/detach
 - [ ] Executar `php artisan test --filter={Model}Test`
+- [ ] Documentar o teste em `docs/tests/README..md` com o objetivo do arquivo

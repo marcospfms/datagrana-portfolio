@@ -1365,31 +1365,31 @@ php artisan test --filter=test_can_login_with_valid_google_token
 
 - [ ] Verificar instalacao do `google/apiclient` (instalar se necessario)
 - [ ] Configurar `.env` com credenciais Google OAuth
-- [ ] Verificar `config/services.php` (adicionar Google)
-- [ ] Revisar `config/cors.php` (manter completo)
-- [ ] Revisar `config/sanctum.php` (manter completo)
+- [x] Verificar `config/services.php` (adicionar Google)
+- [x] Revisar `config/cors.php` (manter completo)
+- [x] Revisar `config/sanctum.php` (manter completo)
 
 ### 11.2 Database
 
-- [ ] Copiar migration `users` do datagrana-web (se ainda nao copiada)
+- [x] Copiar migration `users` do datagrana-web (se ainda nao copiada)
 - [ ] Verificar com `php artisan migrate` (nao deve criar nada novo)
-- [ ] Criar `UserFactory` (duplicar do datagrana-web se existir)
+- [x] Criar `UserFactory` (duplicar do datagrana-web se existir)
 
 ### 11.3 Backend
 
-- [ ] Criar `BaseController`
-- [ ] Criar `GoogleAuthService`
-- [ ] Criar `GoogleAuthRequest`
-- [ ] Criar `AuthController`
-- [ ] Criar `UserResource`
-- [ ] Configurar rotas em `routes/api.php`
+- [x] Criar `BaseController`
+- [x] Criar `GoogleAuthService`
+- [x] Criar `GoogleAuthRequest`
+- [x] Criar `AuthController`
+- [x] Criar `UserResource`
+- [x] Configurar rotas em `routes/api.php`
 
 ### 11.4 Testes
 
-- [ ] Criar `GoogleAuthTest`
-- [ ] Criar `MeEndpointTest`
-- [ ] Criar `LogoutTest`
-- [ ] Criar `HealthCheckTest`
+- [x] Criar `GoogleAuthTest`
+- [x] Criar `MeEndpointTest`
+- [x] Criar `LogoutTest`
+- [x] Criar `HealthCheckTest`
 - [ ] Rodar `php artisan test` - todos passando
 
 ### 11.5 Validacao Final
