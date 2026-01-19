@@ -2,6 +2,10 @@
 
 > Modulo base: bancos/corretoras e contas do usuario.
 
+**Dependencia:** V1 (Autenticacao) completa
+
+**Nota:** Migrations copiadas do `datagrana-web` (banco compartilhado).
+
 ---
 
 ## Indice
@@ -97,6 +101,8 @@ tests/
 
 **Arquivo:** `database/migrations/2025_01_01_000001_create_banks_table.php`
 
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
+
 ```php
 <?php
 
@@ -132,6 +138,10 @@ return new class extends Migration
 
 **Arquivo:** `database/migrations/2025_01_01_000002_create_accounts_table.php`
 
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
+
+**Unicidade:** `unique(['user_id', 'account'])` - permite mesmo nome de conta para usuarios diferentes.
+
 ```php
 <?php
 
@@ -152,6 +162,7 @@ return new class extends Migration
             $table->boolean('default')->default(false);
             $table->timestamps();
 
+            // Unicidade por usuario (Opcao A)
             $table->unique(['user_id', 'account']);
             $table->index('default');
         });
@@ -895,7 +906,7 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
-    // Banks (lista publica de corretoras)
+    // Banks (lista de corretoras - apenas para usuarios autenticados)
     Route::get('/banks', [AccountController::class, 'banks'])->name('banks.index');
 
     // Accounts (contas do usuario)

@@ -1,6 +1,28 @@
 # DataGrana Portfolio - Documentacao
 
-> Sistema de gestao de carteiras de investimento em Renda Variavel.
+> API REST para gestao de carteiras de investimento em Renda Variavel.
+
+---
+
+## Contexto do Projeto
+
+### Estrategia de Migracao
+
+O **datagrana-portfolio** esta sendo desenvolvido como substituto do `datagrana-web`:
+
+```
+datagrana-web (atual) → sera deprecated
+                ↓
+datagrana-portfolio (novo) → API-only para mobile
+```
+
+### Caracteristicas
+
+- **API-only**: Backend exclusivo para consumo via mobile (React Native + Expo)
+- **Banco compartilhado**: Usa mesmo database do `datagrana-web`
+- **Migrations copiadas**: Todas as migrations foram copiadas do projeto web
+- **Models duplicados**: Controllers, Models e Services duplicados e adaptados
+- **OAuth client-side**: Autenticacao Google gerenciada no app mobile
 
 ---
 
@@ -84,12 +106,12 @@ banks (dados de apoio)
 | PUT | `/api/accounts/{id}` | Sim | Atualiza |
 | DELETE | `/api/accounts/{id}` | Sim | Remove |
 
-### Assets (V3)
+### Companies (V3)
 | Metodo | Endpoint | Auth | Descricao |
 |--------|----------|------|-----------|
-| GET | `/api/assets/categories` | Sim | Lista categorias |
-| GET | `/api/assets/search` | Sim | Busca ativos |
-| GET | `/api/assets/{id}` | Sim | Detalhes |
+| GET | `/api/companies/categories` | Sim | Lista categorias |
+| GET | `/api/companies?search=` | Sim | Busca ativos |
+| GET | `/api/companies/{id}` | Sim | Detalhes |
 
 ### Consolidated (V4)
 | Metodo | Endpoint | Auth | Descricao |
@@ -135,13 +157,11 @@ Os padroes estao documentados em [patterns/](./patterns/):
 ## Comandos Uteis
 
 ```bash
-# Criar projeto
-composer create-project laravel/laravel datagrana-portfolio
+# Verificar/instalar dependencias
+composer install
+composer require google/apiclient  # Se nao instalado
 
-# Instalar dependencias
-composer require laravel/sanctum google/apiclient
-
-# Rodar migrations
+# Verificar migrations (nao deve criar nada novo - banco compartilhado)
 php artisan migrate
 
 # Rodar seeders
@@ -153,6 +173,8 @@ php artisan test
 # Rodar servidor
 php artisan serve
 ```
+
+**Nota:** O projeto ja existe configurado. Migrations foram copiadas do `datagrana-web` e ja estao executadas no banco compartilhado.
 
 ---
 

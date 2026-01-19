@@ -2,6 +2,8 @@
 
 > Estrutura de categorias, empresas e tickers para ativos de renda variavel.
 
+> **Nota Importante:** As migrations desta fase foram copiadas do projeto `datagrana-web`, pois ambos os projetos compartilham o mesmo banco de dados. As migrations já foram executadas no banco compartilhado.
+
 ---
 
 ## Indice
@@ -86,6 +88,8 @@ tests/
 
 ### 4.1 Migration: company_category
 
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
+
 **Arquivo:** `database/migrations/2025_01_01_000003_create_company_category_table.php`
 
 ```php
@@ -122,6 +126,8 @@ return new class extends Migration
 ```
 
 ### 4.2 Migration: companies
+
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
 
 **Arquivo:** `database/migrations/2025_01_01_000004_create_companies_table.php`
 
@@ -163,6 +169,8 @@ return new class extends Migration
 ```
 
 ### 4.3 Migration: company_tickers
+
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
 
 **Arquivo:** `database/migrations/2025_01_01_000005_create_company_tickers_table.php`
 
@@ -627,7 +635,7 @@ use Illuminate\Http\Request;
 class AssetController extends BaseController
 {
     /**
-     * GET /api/assets/categories
+     * GET /api/companies/categories
      *
      * Lista categorias de ativos (Acoes, FIIs, ETFs)
      */
@@ -641,7 +649,7 @@ class AssetController extends BaseController
     }
 
     /**
-     * GET /api/assets/search
+     * GET /api/companies?search=
      *
      * Busca ativos por codigo ou nome
      */
@@ -680,7 +688,7 @@ class AssetController extends BaseController
     }
 
     /**
-     * GET /api/assets/{companyTicker}
+     * GET /api/companies/{companyTicker}
      *
      * Exibe detalhes de um ativo
      */
@@ -694,7 +702,7 @@ class AssetController extends BaseController
     }
 
     /**
-     * GET /api/assets/popular
+     * GET /api/companies/popular
      *
      * Lista ativos populares (para sugestoes)
      */
@@ -767,10 +775,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Accounts (V2)
     Route::apiResource('accounts', AccountController::class);
 
-    // Assets (V3)
-    Route::prefix('assets')->name('assets.')->group(function () {
+    // Companies (V3)
+    Route::prefix('companies')->name('companies.')->group(function () {
         Route::get('/categories', [AssetController::class, 'categories'])->name('categories');
-        Route::get('/search', [AssetController::class, 'search'])->name('search');
+        Route::get('/', [AssetController::class, 'search'])->name('search');
         Route::get('/popular', [AssetController::class, 'popular'])->name('popular');
         Route::get('/{companyTicker}', [AssetController::class, 'show'])->name('show');
     });
@@ -960,7 +968,7 @@ class AssetCategoriesTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/categories', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies/categories', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -985,7 +993,7 @@ class AssetCategoriesTest extends TestCase
      */
     public function test_cannot_list_categories_without_authentication(): void
     {
-        $response = $this->getJson('/api/assets/categories');
+        $response = $this->getJson('/api/companies/categories');
 
         $response->assertStatus(401);
     }
@@ -1001,7 +1009,7 @@ class AssetCategoriesTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/categories', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies/categories', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200);
 
@@ -1048,7 +1056,7 @@ class AssetSearchTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/search?search=PETR', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=PETR', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -1072,7 +1080,7 @@ class AssetSearchTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/search?search=Petrobras', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=Petrobras', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data');
@@ -1101,7 +1109,7 @@ class AssetSearchTest extends TestCase
         $auth = $this->createAuthenticatedUser();
 
         $response = $this->getJson(
-            "/api/assets/search?search=TEST&category_id={$acoes->id}",
+            "/api/companies?search=TEST&category_id={$acoes->id}",
             $this->authHeaders($auth['token'])
         );
 
@@ -1131,12 +1139,12 @@ class AssetSearchTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/search?search=ACTIVE', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=ACTIVE', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data');
 
-        $response = $this->getJson('/api/assets/search?search=INACTIVE', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=INACTIVE', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonCount(0, 'data');
@@ -1149,7 +1157,7 @@ class AssetSearchTest extends TestCase
     {
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/search?search=P', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=P', $this->authHeaders($auth['token']));
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['search']);
@@ -1169,7 +1177,7 @@ class AssetSearchTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/search?search=test&limit=3', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies?search=test&limit=3', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200);
         $this->assertLessThanOrEqual(3, count($response->json('data')));
@@ -1180,7 +1188,7 @@ class AssetSearchTest extends TestCase
      */
     public function test_cannot_search_without_authentication(): void
     {
-        $response = $this->getJson('/api/assets/search?search=PETR');
+        $response = $this->getJson('/api/companies?search=PETR');
 
         $response->assertStatus(401);
     }
@@ -1224,7 +1232,7 @@ class AssetShowTest extends TestCase
 
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson("/api/assets/{$ticker->id}", $this->authHeaders($auth['token']));
+        $response = $this->getJson("/api/companies/{$ticker->id}", $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -1251,7 +1259,7 @@ class AssetShowTest extends TestCase
     {
         $auth = $this->createAuthenticatedUser();
 
-        $response = $this->getJson('/api/assets/99999', $this->authHeaders($auth['token']));
+        $response = $this->getJson('/api/companies/99999', $this->authHeaders($auth['token']));
 
         $response->assertStatus(404);
     }
@@ -1263,7 +1271,7 @@ class AssetShowTest extends TestCase
     {
         $ticker = CompanyTicker::factory()->create();
 
-        $response = $this->getJson("/api/assets/{$ticker->id}");
+        $response = $this->getJson("/api/companies/{$ticker->id}");
 
         $response->assertStatus(401);
     }
@@ -1310,11 +1318,11 @@ class AssetShowTest extends TestCase
 
 ### 11.5 Validacao Final
 
-- [ ] Testar `GET /api/assets/categories`
-- [ ] Testar `GET /api/assets/search?search=XXX`
-- [ ] Testar `GET /api/assets/search?search=XXX&category_id=X`
-- [ ] Testar `GET /api/assets/popular`
-- [ ] Testar `GET /api/assets/{id}`
+- [ ] Testar `GET /api/companies/categories`
+- [ ] Testar `GET /api/companies?search=XXX`
+- [ ] Testar `GET /api/companies?search=XXX&category_id=X`
+- [ ] Testar `GET /api/companies/popular`
+- [ ] Testar `GET /api/companies/{id}`
 
 ---
 
@@ -1322,10 +1330,10 @@ class AssetShowTest extends TestCase
 
 | Metodo | Endpoint | Auth | Descricao |
 |--------|----------|------|-----------|
-| GET | `/api/assets/categories` | Sim | Lista categorias |
-| GET | `/api/assets/search` | Sim | Busca ativos |
-| GET | `/api/assets/popular` | Sim | Ativos populares |
-| GET | `/api/assets/{id}` | Sim | Detalhes do ativo |
+| GET | `/api/companies/categories` | Sim | Lista categorias |
+| GET | `/api/companies?search=` | Sim | Busca ativos |
+| GET | `/api/companies/popular` | Sim | Ativos populares |
+| GET | `/api/companies/{id}` | Sim | Detalhes do ativo |
 
 ---
 

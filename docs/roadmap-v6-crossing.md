@@ -2,6 +2,8 @@
 
 > Comparacao entre portfolio ideal e posicoes reais consolidadas.
 
+**Dependencia:** V5 completa. **Migrations copiadas** do `datagrana-web` (banco compartilhado).
+
 ---
 
 ## Indice
@@ -35,6 +37,24 @@ Implementar a funcionalidade de **Crossing** (cruzamento):
 
 ---
 
+## Regras de Negócio
+
+### Histórico de Composição
+- Usa **soft delete** (`deleted_at`) para marcar remoções
+- Mantém histórico completo de todas as versões
+- Ao remover ativo da carteira, preenche `deleted_at`
+
+### Preços Ausentes (last_price)
+- Quando não há cotação disponível: retorna `null`
+- **Mensagem sugerida:** "Aguarde atualização de preços"
+- **Fallback para cálculo:** Usa `average_price * quantity` do consolidated
+
+### Cálculo de Totais
+- Ativos com `last_price = null` usam valor do consolidated
+- Formato: `{ "last_price": null, "current_value": 1500.00 }`
+
+---
+
 ## 2. Dependencias
 
 **Requer:** V5 (Portfolio) completa
@@ -42,7 +62,7 @@ Implementar a funcionalidade de **Crossing** (cruzamento):
 **Tabelas necessarias:**
 - `portfolios`
 - `portfolio_compositions`
-- `portfolio_composition_histories`
+- `portfolio_composition_histories` - **Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
 - `consolidated`
 - `company_tickers`
 
@@ -1009,7 +1029,33 @@ class PortfolioHelperTest extends TestCase
 
 ## 9. Checklist de Implementacao
 
-### 9.1 Backend
+### 9.1 Migrations e Models
+
+- [ ] **Migration `portfolio_composition_histories`**: Verificar se possui campo `deleted_at` (SoftDeletes)
+  ```php
+  $table->softDeletes(); // Campo deleted_at para soft delete
+  ```
+
+- [ ] **Model `PortfolioCompositionHistory`**: Adicionar trait SoftDeletes
+  ```php
+  use Illuminate\Database\Eloquent\SoftDeletes;
+
+  class PortfolioCompositionHistory extends Model
+  {
+      use SoftDeletes;
+
+      protected $dates = ['deleted_at'];
+      // ... resto do model
+  }
+  ```
+
+- [ ] **Resource `CrossingResource`**: Tratar `last_price` null com fallback
+  ```php
+  'last_price' => $this->last_price ?? null,
+  'current_value' => $this->current_value ?? ($this->consolidated?->average_price * $this->consolidated?->quantity),
+  ```
+
+### 9.2 Backend
 
 - [ ] Criar `app/Helpers/PortfolioHelper.php`
 - [ ] Criar `app/Services/Portfolio/CrossingService.php`
@@ -1017,13 +1063,13 @@ class PortfolioHelperTest extends TestCase
 - [ ] Adicionar injecao de `CrossingService` no controller
 - [ ] Configurar rota `/api/portfolios/{id}/crossing`
 
-### 9.2 Testes
+### 9.3 Testes
 
 - [ ] Criar `tests/Feature/Portfolio/CrossingTest.php`
 - [ ] Criar `tests/Unit/Helpers/PortfolioHelperTest.php`
 - [ ] Rodar `php artisan test` - todos passando
 
-### 9.3 Validacao Final
+### 9.4 Validacao Final
 
 - [ ] Testar `GET /api/portfolios/{id}/crossing` com posicoes
 - [ ] Testar com ativos sem posicao (not_positioned)
@@ -1031,6 +1077,8 @@ class PortfolioHelperTest extends TestCase
 - [ ] Verificar calculos de to_buy_quantity
 - [ ] Verificar ordenacao por categoria/ticker
 - [ ] Verificar totais calculados
+- [ ] Testar casos com `last_price = null` (deve usar fallback do consolidated)
+- [ ] Verificar soft delete funcionando em `portfolio_composition_histories`
 
 ---
 

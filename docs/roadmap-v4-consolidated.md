@@ -2,6 +2,8 @@
 
 > Registro de compras e posicoes consolidadas do usuario.
 
+**Dependencia:** V3 completa. **Migrations copiadas** do `datagrana-web` (banco compartilhado).
+
 ---
 
 ## Indice
@@ -35,6 +37,25 @@ Implementar o registro de posicoes consolidadas:
 - CRUD de posicoes
 - Endpoint de resumo
 - Testes automatizados
+
+---
+
+## Regras de Negócio
+
+### Cálculo de Balance (Lucro/Prejuízo)
+```php
+balance = (current_price * quantity) - (average_price * quantity)
+```
+
+### Fechamento de Posição
+- Quando `quantity` chega a 0 após venda total
+- Registro é **soft deleted** (`deleted_at` é preenchido)
+- Mantém histórico para auditoria
+
+### Venda Parcial
+- Recalcula `quantity` (subtrai quantidade vendida)
+- **Mantém `average_price` original** (preço médio de compra)
+- Atualiza `current_price` e `balance`
 
 ---
 
@@ -93,6 +114,8 @@ tests/
 
 **Arquivo:** `database/migrations/2025_01_01_000006_create_consolidated_table.php`
 
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
+
 ```php
 <?php
 
@@ -147,10 +170,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Consolidated extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'consolidated';
 

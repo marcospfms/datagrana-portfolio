@@ -2,6 +2,8 @@
 
 > Carteiras de investimento e composicoes com alocacao percentual.
 
+**Dependencia:** V4 completa. **Migrations copiadas** do `datagrana-web` (banco compartilhado).
+
 ---
 
 ## Indice
@@ -34,6 +36,21 @@ Implementar o sistema de carteiras ideais:
 - Tabelas `portfolios`, `portfolio_compositions`, `portfolio_composition_histories`
 - CRUD completo de portfolio e composicoes
 - Testes automatizados
+
+## Regras de Validação de Composição
+
+### Soma dos Percentuais
+- **Flexível:** Permite soma ≠ 100%
+- **Warning:** Exibe aviso se soma ≠ 100% (não bloqueia)
+- Permite ajustes graduais da carteira
+
+### Percentual Individual
+- Deve ser **maior que 0** (`percentage > 0`)
+- Não aceita alocação com percentual zero
+
+### Duplicatas
+- **Não permite** mesmo ativo duplicado na carteira
+- Constraint: `unique(['portfolio_id', 'company_ticker_id'])`
 
 ---
 
@@ -102,6 +119,8 @@ tests/
 
 ### 4.1 Migration: portfolios
 
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
+
 **Arquivo:** `database/migrations/2025_01_01_000007_create_portfolios_table.php`
 
 ```php
@@ -136,6 +155,8 @@ return new class extends Migration
 ```
 
 ### 4.2 Migration: portfolio_compositions
+
+**Importante:** Copiar do `datagrana-web`. Ja executada no banco compartilhado.
 
 **Arquivo:** `database/migrations/2025_01_01_000008_create_portfolio_compositions_table.php`
 
@@ -526,7 +547,7 @@ class StoreCompositionRequest extends FormRequest
             'compositions.*.percentage' => [
                 'required',
                 'numeric',
-                'min:0.01',
+                'gt:0',
                 'max:100',
             ],
         ];
@@ -567,7 +588,7 @@ class UpdateCompositionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'percentage' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'percentage' => ['required', 'numeric', 'gt:0', 'max:100'],
         ];
     }
 

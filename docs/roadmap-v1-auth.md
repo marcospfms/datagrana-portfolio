@@ -1,6 +1,28 @@
 # Roadmap V1 - Setup + Autenticacao Google OAuth
 
-> Fase inicial: configuracao do projeto Laravel e implementacao da autenticacao via Google OAuth com Sanctum.
+> Fase inicial: implementacao da autenticacao via Google OAuth com Sanctum no projeto existente.
+
+---
+
+## Contexto do Projeto
+
+Este roadmap assume que o projeto **datagrana-portfolio** ja existe e esta configurado:
+
+- **Laravel 12** ja instalado e configurado
+- **Sanctum** ja instalado (migrations publicadas)
+- **Banco de dados compartilhado** com `datagrana-web` (mesmo database)
+- **API-only**: Ignora rotas web, Fortify, Breeze e Inertia (mantidos instalados para uso futuro)
+- **Migrations copiadas** do datagrana-web (ja executadas no banco)
+
+### Estrategia de Migracao
+
+```
+datagrana-web (atual) → sera deprecated
+                ↓
+datagrana-portfolio (novo) → substitui completamente
+```
+
+O **datagrana-portfolio** duplicara Models, Controllers e Services do `datagrana-web`, mas focando exclusivamente em API REST para consumo mobile.
 
 ---
 
@@ -22,19 +44,39 @@
 
 ## 1. Objetivo da Fase
 
-Implementar o sistema de autenticacao completo usando Google OAuth:
+Implementar o sistema de autenticacao completo usando Google OAuth **client-side**:
 
-- Usuario faz login com Google no app React Native
-- App envia `id_token` para a API
-- API valida token, cria/atualiza usuario
-- API retorna Bearer token Sanctum
-- Endpoints de perfil e logout
+### Fluxo de Autenticacao (Client-Side OAuth)
+
+```
+1. App React Native inicia login Google localmente (SDK nativo)
+   ↓
+2. Google SDK no app abre tela de login
+   ↓
+3. Usuario faz login no Google
+   ↓
+4. Google retorna id_token para o APP
+   ↓
+5. App envia id_token para API Laravel (POST /api/auth/google)
+   ↓
+6. Backend valida id_token com Google (verifyIdToken)
+   ↓
+7. Backend cria/atualiza usuario no banco
+   ↓
+8. Backend retorna Bearer token Sanctum para o app
+```
+
+**Importante:**
+- ❌ Nao ha callback/redirect server-side
+- ❌ Nao usa OAuth code flow
+- ✅ Apenas aceita `id_token` ja emitido pelo Google
+- ✅ Backend apenas valida token e retorna Sanctum token
 
 **Entregaveis:**
-- Projeto Laravel 12 configurado
-- Autenticacao Google OAuth funcional
-- Endpoints: login, me, logout
+- Autenticacao Google OAuth funcional (client-side)
+- Endpoints: login, me, logout, logout-all
 - Testes automatizados
+- Integracao com banco existente
 
 ---
 
@@ -66,26 +108,24 @@ Implementar o sistema de autenticacao completo usando Google OAuth:
 
 ## 3. Setup do Projeto
 
-### 3.1 Criar Projeto
+### 3.1 Verificar Instalacao
+
+O projeto ja existe. Verifique se as dependencias necessarias estao instaladas:
 
 ```bash
-# Criar projeto Laravel
-composer create-project laravel/laravel datagrana-portfolio
-
 cd datagrana-portfolio
 
-# Instalar dependencias
-composer require laravel/sanctum
+# Verificar pacotes instalados
+composer show laravel/sanctum
+composer show google/apiclient
+
+# Se algum pacote estiver faltando, instale:
 composer require google/apiclient
-
-# Publicar config Sanctum
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-
-# Gerar chave
-php artisan key:generate
 ```
 
 ### 3.2 Configurar .env
+
+**Importante:** O banco de dados e **compartilhado** com `datagrana-web`.
 
 ```env
 APP_NAME="DataGrana Portfolio"
@@ -93,11 +133,11 @@ APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
 
-# Banco de Dados
+# Banco de Dados (MESMO banco do datagrana-web)
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=datagrana_portfolio
+DB_DATABASE=datagrana
 DB_USERNAME=root
 DB_PASSWORD=
 
@@ -126,31 +166,40 @@ return [
 
 ### 3.4 Configurar CORS (config/cors.php)
 
+Para mobile com Bearer token, a configuracao pode ser simplificada, mas mantemos completa para uso futuro:
+
 ```php
 <?php
 
 return [
     'paths' => ['api/*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['*'],
+    'allowed_origins' => ['*'], // Em producao, especificar domínios
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 0,
-    'supports_credentials' => false,
+    'supports_credentials' => true, // Mantido para uso futuro web
 ];
 ```
 
 ### 3.5 Configurar Sanctum (config/sanctum.php)
 
+Mantemos configuracao completa (stateful/CSRF) para uso futuro, mas mobile usa apenas Bearer tokens:
+
 ```php
 <?php
 
 return [
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', '')),
+    // Para mobile, pode ser vazio, mas mantemos para futuro uso web
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,127.0.0.1')),
+
     'guard' => ['web'],
+
     'expiration' => null, // Tokens nao expiram (ou defina em minutos)
+
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
+
     'middleware' => [
         'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
         'encrypt_cookies' => Illuminate\Cookie\Middleware\EncryptCookies::class,
@@ -158,6 +207,8 @@ return [
     ],
 ];
 ```
+
+**Nota:** Mobile apps usam apenas `Authorization: Bearer {token}` - nao precisam de cookies/CSRF.
 
 ---
 
@@ -203,6 +254,8 @@ tests/
 
 **Arquivo:** `database/migrations/0001_01_01_000000_create_users_table.php`
 
+**Importante:** Esta migration ja foi executada no banco compartilhado. Ela esta aqui como **referencia** e sera copiada do `datagrana-web`. Quando rodar `php artisan migrate`, nao sera executada novamente (tabela `migrations` ja registra).
+
 ```php
 <?php
 
@@ -223,7 +276,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable(); // Nullable para OAuth
             $table->rememberToken();
-            $table->text('google_id')->nullable();
+            $table->string('google_id')->nullable(); // String ao inves de text
             $table->timestamps();
 
             $table->index('google_id');
@@ -254,6 +307,8 @@ return new class extends Migration
     }
 };
 ```
+
+**Nota:** Copie esta migration exatamente como esta no `datagrana-web` para manter compatibilidade.
 
 ### 5.2 Model: User
 
@@ -1308,19 +1363,17 @@ php artisan test --filter=test_can_login_with_valid_google_token
 
 ### 11.1 Setup
 
-- [ ] Criar projeto Laravel 12
-- [ ] Instalar `laravel/sanctum`
-- [ ] Instalar `google/apiclient`
-- [ ] Configurar `.env` com credenciais
-- [ ] Configurar `config/services.php`
-- [ ] Configurar `config/cors.php`
-- [ ] Configurar `config/sanctum.php`
+- [ ] Verificar instalacao do `google/apiclient` (instalar se necessario)
+- [ ] Configurar `.env` com credenciais Google OAuth
+- [ ] Verificar `config/services.php` (adicionar Google)
+- [ ] Revisar `config/cors.php` (manter completo)
+- [ ] Revisar `config/sanctum.php` (manter completo)
 
 ### 11.2 Database
 
-- [ ] Criar/ajustar migration `users`
-- [ ] Rodar `php artisan migrate`
-- [ ] Criar `UserFactory`
+- [ ] Copiar migration `users` do datagrana-web (se ainda nao copiada)
+- [ ] Verificar com `php artisan migrate` (nao deve criar nada novo)
+- [ ] Criar `UserFactory` (duplicar do datagrana-web se existir)
 
 ### 11.3 Backend
 
