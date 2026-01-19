@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\AssetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,6 +29,13 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/banks', [AccountController::class, 'banks'])->name('banks.index');
     Route::apiResource('accounts', AccountController::class);
+
+    Route::prefix('companies')->name('companies.')->group(function () {
+        Route::get('/categories', [AssetController::class, 'categories'])->name('categories');
+        Route::get('/', [AssetController::class, 'search'])->name('search');
+        Route::get('/popular', [AssetController::class, 'popular'])->name('popular');
+        Route::get('/{companyTicker}', [AssetController::class, 'show'])->name('show');
+    });
 });
 
 /*

@@ -17,6 +17,12 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Account/AccountUpdateTest.php`: valida atualizacao, troca de default e validacao de duplicidade.
 - `tests/Feature/Account/AccountDestroyTest.php`: valida remocao, bloqueio de terceiros e reassinacao de default.
 
+## Companies (V3)
+
+- `tests/Feature/Asset/AssetCategoriesTest.php`: valida listagem de categorias ativas e ordenacao.
+- `tests/Feature/Asset/AssetSearchTest.php`: valida busca de ativos por ticker/nome, filtros e limit.
+- `tests/Feature/Asset/AssetShowTest.php`: valida detalhe de ativo e respostas 404/401.
+
 ## Health
 
 - `tests/Feature/HealthCheckTest.php`: valida `GET /api/health` com resposta de sucesso.

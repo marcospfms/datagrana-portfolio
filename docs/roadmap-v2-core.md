@@ -273,11 +273,11 @@ Implementado em `tests/Feature/Account/AccountDestroyTest.php`.
 
 - [x] Criar migration `banks`
 - [x] Criar migration `accounts`
-- [ ] Rodar `php artisan migrate`
+- [x] Rodar `php artisan migrate`
 - [x] Criar `BankFactory`
 - [x] Criar `AccountFactory`
 - [x] Criar `BankSeeder`
-- [ ] Rodar `php artisan db:seed`
+- [x] Rodar `php artisan db:seed`
 
 ### 13.2 Models
 
@@ -304,16 +304,16 @@ Implementado em `tests/Feature/Account/AccountDestroyTest.php`.
 - [x] Criar `AccountShowTest`
 - [x] Criar `AccountUpdateTest`
 - [x] Criar `AccountDestroyTest`
-- [ ] Rodar `php artisan test` - todos passando
+- [x] Rodar `php artisan test` - todos passando
 
 ### 13.5 Validacao Final
 
-- [ ] Testar `GET /api/banks`
-- [ ] Testar `GET /api/accounts`
-- [ ] Testar `POST /api/accounts`
-- [ ] Testar `GET /api/accounts/{id}`
-- [ ] Testar `PUT /api/accounts/{id}`
-- [ ] Testar `DELETE /api/accounts/{id}`
+- [x] Testar `GET /api/banks`
+- [x] Testar `GET /api/accounts`
+- [x] Testar `POST /api/accounts`
+- [x] Testar `GET /api/accounts/{id}`
+- [x] Testar `PUT /api/accounts/{id}`
+- [x] Testar `DELETE /api/accounts/{id}`
 
 ---
 
