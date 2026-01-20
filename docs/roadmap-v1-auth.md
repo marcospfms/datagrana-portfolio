@@ -74,7 +74,7 @@ Implementar o sistema de autenticacao completo usando Google OAuth **client-side
 
 **Entregaveis:**
 - Autenticacao Google OAuth funcional (client-side)
-- Endpoints: login, me, logout, logout-all
+- Endpoints: login, me, profile, password, logout, logout-all
 - Testes automatizados
 - Integracao com banco existente
 
@@ -180,7 +180,9 @@ app/
 │   │       └── AuthController.php
 │   ├── Requests/
 │   │   └── Auth/
-│   │       └── GoogleAuthRequest.php
+│   │       ├── GoogleAuthRequest.php
+│   │       ├── UpdatePasswordRequest.php
+│   │       └── UpdateProfileRequest.php
 │   └── Resources/
 │       └── UserResource.php
 ├── Models/
@@ -200,7 +202,9 @@ tests/
 └── Feature/
     └── Auth/
         ├── GoogleAuthTest.php
-        └── LogoutTest.php
+        ├── LogoutTest.php
+        ├── PasswordUpdateTest.php
+        └── ProfileUpdateTest.php
 ```
 
 ---
@@ -255,7 +259,19 @@ Implementado em `app/Http/Controllers/Api/BaseController.php`.
 
 Implementado em `app/Http/Requests/Auth/GoogleAuthRequest.php`.
 
-### 7.3 AuthController
+### 7.3 UpdateProfileRequest
+
+**Arquivo:** `app/Http/Requests/Auth/UpdateProfileRequest.php`
+
+Implementado em `app/Http/Requests/Auth/UpdateProfileRequest.php`.
+
+### 7.4 UpdatePasswordRequest
+
+**Arquivo:** `app/Http/Requests/Auth/UpdatePasswordRequest.php`
+
+Implementado em `app/Http/Requests/Auth/UpdatePasswordRequest.php`.
+
+### 7.5 AuthController
 
 **Arquivo:** `app/Http/Controllers/Api/AuthController.php`
 
@@ -309,7 +325,19 @@ Implementado em `tests/Feature/Auth/MeEndpointTest.php`.
 
 Implementado em `tests/Feature/Auth/LogoutTest.php`.
 
-### 10.5 HealthCheckTest
+### 10.5 ProfileUpdateTest
+
+**Arquivo:** `tests/Feature/Auth/ProfileUpdateTest.php`
+
+Implementado em `tests/Feature/Auth/ProfileUpdateTest.php`.
+
+### 10.6 PasswordUpdateTest
+
+**Arquivo:** `tests/Feature/Auth/PasswordUpdateTest.php`
+
+Implementado em `tests/Feature/Auth/PasswordUpdateTest.php`.
+
+### 10.7 HealthCheckTest
 
 **Arquivo:** `tests/Feature/HealthCheckTest.php`
 
@@ -354,6 +382,8 @@ php artisan test --filter=test_can_login_with_valid_google_token
 - [x] Criar `BaseController`
 - [x] Criar `GoogleAuthService`
 - [x] Criar `GoogleAuthRequest`
+- [x] Criar `UpdateProfileRequest`
+- [x] Criar `UpdatePasswordRequest`
 - [x] Criar `AuthController`
 - [x] Criar `UserResource`
 - [x] Configurar rotas em `routes/api.php`
@@ -363,6 +393,8 @@ php artisan test --filter=test_can_login_with_valid_google_token
 - [x] Criar `GoogleAuthTest`
 - [x] Criar `MeEndpointTest`
 - [x] Criar `LogoutTest`
+- [x] Criar `ProfileUpdateTest`
+- [x] Criar `PasswordUpdateTest`
 - [x] Criar `HealthCheckTest`
 - [x] Rodar `php artisan test` - todos passando
 
@@ -371,6 +403,8 @@ php artisan test --filter=test_can_login_with_valid_google_token
 - [x] Testar endpoint `/api/health`
 - [x] Testar login com token Google real (Postman/Insomnia)
 - [x] Testar `/api/auth/me` com Bearer token
+- [x] Testar `/api/auth/profile` com Bearer token
+- [x] Testar `/api/auth/password` com Bearer token
 - [x] Testar `/api/auth/logout`
 - [x] Testar `/api/auth/logout-all`
 
@@ -383,6 +417,9 @@ php artisan test --filter=test_can_login_with_valid_google_token
 | GET | `/api/health` | Nao | Health check |
 | POST | `/api/auth/google` | Nao | Login com Google |
 | GET | `/api/auth/me` | Sim | Dados do usuario |
+| GET | `/api/auth/profile` | Sim | Perfil do usuario |
+| PATCH | `/api/auth/profile` | Sim | Atualizar perfil |
+| PUT | `/api/auth/password` | Sim | Atualizar senha |
 | POST | `/api/auth/logout` | Sim | Logout device atual |
 | POST | `/api/auth/logout-all` | Sim | Logout todos devices |
 

@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Auth\GoogleAuthRequest;
+use App\Http\Requests\Auth\UpdatePasswordRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Services\Auth\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends BaseController
 {
@@ -47,6 +50,38 @@ class AuthController extends BaseController
         return $this->sendResponse([
             'user' => new UserResource($request->user()),
         ]);
+    }
+
+    public function profile(Request $request): JsonResponse
+    {
+        return $this->sendResponse([
+            'user' => new UserResource($request->user()),
+        ], 'Perfil carregado com sucesso.');
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->fill($request->validated());
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        return $this->sendResponse([
+            'user' => new UserResource($user),
+        ], 'Perfil atualizado com sucesso.');
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $request->user()->update([
+            'password' => Hash::make($request->validated('password')),
+        ]);
+
+        return $this->sendResponse([], 'Senha atualizada com sucesso.');
     }
 
     public function logout(Request $request): JsonResponse

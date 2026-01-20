@@ -20,6 +20,9 @@ Route::prefix('auth')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::get('/profile', [AuthController::class, 'profile'])->name('auth.profile');
+        Route::patch('/profile', [AuthController::class, 'updateProfile'])->name('auth.profile.update');
+        Route::put('/password', [AuthController::class, 'updatePassword'])->name('auth.password.update');
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('auth.logout-all');
     });

@@ -7,6 +7,8 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Auth/GoogleAuthTest.php`: cobre login via Google (token valido/invalido), usuario inativo, criacao de usuario e revogacao de tokens antigos.
 - `tests/Feature/Auth/MeEndpointTest.php`: valida `GET /api/auth/me` com token valido e bloqueia acessos sem token/invalido/revogado.
 - `tests/Feature/Auth/LogoutTest.php`: valida `POST /api/auth/logout` e `POST /api/auth/logout-all`, incluindo revogacao de tokens.
+- `tests/Feature/Auth/ProfileUpdateTest.php`: valida `GET /api/auth/profile`, atualizacao de nome/email e validacoes basicas.
+- `tests/Feature/Auth/PasswordUpdateTest.php`: valida `PUT /api/auth/password`, incluindo senha atual invalida e auth obrigatoria.
 
 ## Core (V2)
 
