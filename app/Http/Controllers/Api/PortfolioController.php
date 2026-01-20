@@ -6,6 +6,7 @@ use App\Http\Requests\Portfolio\StorePortfolioRequest;
 use App\Http\Requests\Portfolio\UpdatePortfolioRequest;
 use App\Http\Resources\PortfolioResource;
 use App\Models\Portfolio;
+use App\Services\Portfolio\CrossingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -90,6 +91,18 @@ class PortfolioController extends BaseController
         $portfolio->delete();
 
         return $this->sendResponse([], 'Portfolio removido com sucesso.');
+    }
+
+    public function crossing(Portfolio $portfolio, Request $request, CrossingService $crossingService): JsonResponse
+    {
+        $this->authorize('view', $portfolio);
+
+        $crossing = $crossingService->prepare($portfolio, $request->user());
+
+        return $this->sendResponse([
+            'portfolio' => new PortfolioResource($portfolio),
+            'crossing' => $crossing,
+        ]);
     }
 
     private function compositionSortKey($composition): string

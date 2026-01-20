@@ -53,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('consolidated.transactions.destroy');
 
     Route::apiResource('portfolios', PortfolioController::class);
+    Route::get('/portfolios/{portfolio}/crossing', [PortfolioController::class, 'crossing'])
+        ->name('portfolios.crossing');
     Route::post('/portfolios/{portfolio}/compositions', [CompositionController::class, 'store'])
         ->name('compositions.store');
     Route::put('/compositions/batch', [CompositionController::class, 'updateBatch'])

@@ -43,6 +43,11 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Portfolio/CompositionUpdateBatchTest.php`: valida atualizacao em lote e bloqueio de terceiros.
 - `tests/Feature/Portfolio/CompositionDestroyTest.php`: valida remocao e registro de historico.
 
+## Crossing (V6)
+
+- `tests/Feature/Portfolio/CrossingTest.php`: valida dados de crossing, status e calculos de compra.
+- `tests/Unit/Helpers/PortfolioHelperTest.php`: valida calculos e formatacao do helper de crossing.
+
 ## Health
 
 - `tests/Feature/HealthCheckTest.php`: valida `GET /api/health` com resposta de sucesso.
