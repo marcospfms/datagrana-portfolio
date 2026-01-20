@@ -32,6 +32,17 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Consolidated/ConsolidatedTransactionUpdateTest.php`: valida atualizacao de transacoes e recalc do consolidado.
 - `tests/Feature/Consolidated/ConsolidatedTransactionDestroyTest.php`: valida remocao de transacoes e cleanup do consolidado.
 
+## Portfolio (V5)
+
+- `tests/Feature/Portfolio/PortfolioIndexTest.php`: valida listagem de portfolios e filtro por nome.
+- `tests/Feature/Portfolio/PortfolioStoreTest.php`: valida criacao de portfolio e validacoes de campos.
+- `tests/Feature/Portfolio/PortfolioUpdateTest.php`: valida atualizacao e bloqueio de terceiros.
+- `tests/Feature/Portfolio/PortfolioDestroyTest.php`: valida remocao (soft delete) e bloqueio de terceiros.
+- `tests/Feature/Portfolio/CompositionStoreTest.php`: valida adicao de composicoes para ativos e validacoes.
+- `tests/Feature/Portfolio/CompositionUpdateTest.php`: valida atualizacao de porcentagem e bloqueio de terceiros.
+- `tests/Feature/Portfolio/CompositionUpdateBatchTest.php`: valida atualizacao em lote e bloqueio de terceiros.
+- `tests/Feature/Portfolio/CompositionDestroyTest.php`: valida remocao e registro de historico.
+
 ## Health
 
 - `tests/Feature/HealthCheckTest.php`: valida `GET /api/health` com resposta de sucesso.

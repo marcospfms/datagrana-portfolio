@@ -76,4 +76,27 @@ class ConsolidatedSummaryTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_summary_includes_treasure_categories(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $treasure = \App\Models\Treasure::factory()->create();
+
+        Consolidated::factory()->create([
+            'account_id' => $account->id,
+            'treasure_id' => $treasure->id,
+            'company_ticker_id' => null,
+            'average_purchase_price' => 100.00,
+            'quantity_current' => 2,
+            'total_purchased' => 200.00,
+            'closed' => false,
+        ]);
+
+        $response = $this->getJson('/api/consolidated/summary', $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data.by_category')
+            ->assertJsonPath('data.by_category.0.category', $treasure->treasureCategory->name);
+    }
 }

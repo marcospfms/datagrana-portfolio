@@ -66,4 +66,61 @@ class ConsolidatedTransactionDestroyTest extends TestCase
         $this->assertEquals('0.00000000', (string) $consolidated->average_selling_price);
         $this->assertFalse($consolidated->closed);
     }
+
+    public function test_can_delete_treasure_transaction(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $treasure = \App\Models\Treasure::factory()->create();
+
+        $consolidated = Consolidated::factory()->forAccount($account)->create([
+            'treasure_id' => $treasure->id,
+            'quantity_current' => 6,
+            'quantity_purchased' => 10,
+            'quantity_sold' => 4,
+            'total_purchased' => 200,
+            'total_sold' => 120,
+            'average_purchase_price' => 20,
+            'average_selling_price' => 30,
+            'closed' => false,
+        ]);
+
+        $buyTransaction = \App\Models\TreasureTransaction::factory()->create([
+            'consolidated_id' => $consolidated->id,
+            'operation' => 'C',
+            'quantity' => 10,
+            'invested_value' => 200,
+            'price' => 20,
+        ]);
+
+        $sellTransaction = \App\Models\TreasureTransaction::factory()->create([
+            'consolidated_id' => $consolidated->id,
+            'operation' => 'V',
+            'quantity' => 4,
+            'invested_value' => 120,
+            'price' => 30,
+        ]);
+
+        $response = $this->deleteJson(
+            "/api/consolidated/transactions/treasure/{$sellTransaction->id}",
+            [],
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('treasure_transaction', ['id' => $sellTransaction->id]);
+        $this->assertDatabaseHas('treasure_transaction', ['id' => $buyTransaction->id]);
+
+        $consolidated->refresh();
+        $this->assertEquals('10.00000000', (string) $consolidated->quantity_current);
+        $this->assertEquals('10.00000000', (string) $consolidated->quantity_purchased);
+        $this->assertEquals('0.00000000', (string) $consolidated->quantity_sold);
+        $this->assertEquals('200.00000000', (string) $consolidated->total_purchased);
+        $this->assertEquals('0.00000000', (string) $consolidated->total_sold);
+        $this->assertEquals('20.00000000', (string) $consolidated->average_purchase_price);
+        $this->assertEquals('0.00000000', (string) $consolidated->average_selling_price);
+        $this->assertFalse($consolidated->closed);
+    }
 }

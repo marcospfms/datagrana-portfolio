@@ -63,6 +63,11 @@ class User extends Authenticatable
         return $this->hasMany(Account::class);
     }
 
+    public function portfolios(): HasMany
+    {
+        return $this->hasMany(Portfolio::class);
+    }
+
     public function defaultAccount(): ?Account
     {
         return $this->accounts()->where('default', true)->first();

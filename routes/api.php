@@ -3,8 +3,10 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AssetController;
+use App\Http\Controllers\Api\CompositionController;
 use App\Http\Controllers\Api\ConsolidatedController;
 use App\Http\Controllers\Api\ConsolidatedTransactionController;
+use App\Http\Controllers\Api\PortfolioController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +51,16 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('consolidated.transactions.update');
     Route::delete('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'destroy'])
         ->name('consolidated.transactions.destroy');
+
+    Route::apiResource('portfolios', PortfolioController::class);
+    Route::post('/portfolios/{portfolio}/compositions', [CompositionController::class, 'store'])
+        ->name('compositions.store');
+    Route::put('/compositions/batch', [CompositionController::class, 'updateBatch'])
+        ->name('compositions.batch');
+    Route::put('/compositions/{composition}', [CompositionController::class, 'update'])
+        ->name('compositions.update');
+    Route::delete('/compositions/{composition}', [CompositionController::class, 'destroy'])
+        ->name('compositions.destroy');
 });
 
 /*

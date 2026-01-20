@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Account;
 use App\Models\Consolidated;
+use App\Models\Portfolio;
 use App\Policies\AccountPolicy;
 use App\Policies\ConsolidatedPolicy;
+use App\Policies\PortfolioPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Account::class, AccountPolicy::class);
         Gate::policy(Consolidated::class, ConsolidatedPolicy::class);
+        Gate::policy(Portfolio::class, PortfolioPolicy::class);
         $this->configureDefaults();
         $this->loadMigrations();
     }
