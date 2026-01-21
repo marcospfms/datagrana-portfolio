@@ -14,7 +14,7 @@ class CompanyResource extends JsonResource
             'name' => $this->name,
             'nickname' => $this->nickname,
             'cnpj' => $this->cnpj,
-            'photo' => $this->photo,
+            'photo' => $this->photo === 'https://icons.brapi.dev/icons/BRAPI.svg' ? null : $this->photo,
             'segment' => $this->segment,
             'sector' => $this->sector,
             'subsector' => $this->subsector,
