@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Auth\GoogleAuthRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\UpdatePasswordRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Services\Auth\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,34 @@ class AuthController extends BaseController
     public function __construct(
         protected GoogleAuthService $googleAuthService
     ) {}
+
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $user = User::where('email', $request->validated('email'))->first();
+
+        if (!$user || !Hash::check($request->validated('password'), $user->password)) {
+            return $this->sendError('Credenciais invalidas.', [
+                'email' => ['As credenciais fornecidas sao invalidas.'],
+            ], 401);
+        }
+
+        if (!$user->isActive()) {
+            return $this->sendError(
+                'Sua conta esta desativada. Entre em contato com o suporte.',
+                [],
+                403
+            );
+        }
+
+        $user->tokens()->delete();
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return $this->sendResponse([
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'user' => new UserResource($user),
+        ], 'Login realizado com sucesso.');
+    }
 
     public function google(GoogleAuthRequest $request): JsonResponse
     {

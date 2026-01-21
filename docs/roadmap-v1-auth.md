@@ -382,6 +382,7 @@ php artisan test --filter=test_can_login_with_valid_google_token
 - [x] Criar `BaseController`
 - [x] Criar `GoogleAuthService`
 - [x] Criar `GoogleAuthRequest`
+- [x] Criar `LoginRequest`
 - [x] Criar `UpdateProfileRequest`
 - [x] Criar `UpdatePasswordRequest`
 - [x] Criar `AuthController`
@@ -391,6 +392,7 @@ php artisan test --filter=test_can_login_with_valid_google_token
 ### 11.4 Testes
 
 - [x] Criar `GoogleAuthTest`
+- [x] Criar `LoginTest`
 - [x] Criar `MeEndpointTest`
 - [x] Criar `LogoutTest`
 - [x] Criar `ProfileUpdateTest`
@@ -402,6 +404,7 @@ php artisan test --filter=test_can_login_with_valid_google_token
 
 - [x] Testar endpoint `/api/health`
 - [x] Testar login com token Google real (Postman/Insomnia)
+- [x] Testar login com email e senha
 - [x] Testar `/api/auth/me` com Bearer token
 - [x] Testar `/api/auth/profile` com Bearer token
 - [x] Testar `/api/auth/password` com Bearer token
@@ -415,6 +418,7 @@ php artisan test --filter=test_can_login_with_valid_google_token
 | Metodo | Endpoint | Auth | Descricao |
 |--------|----------|------|-----------|
 | GET | `/api/health` | Nao | Health check |
+| POST | `/api/auth/login` | Nao | Login com email e senha |
 | POST | `/api/auth/google` | Nao | Login com Google |
 | GET | `/api/auth/me` | Sim | Dados do usuario |
 | GET | `/api/auth/profile` | Sim | Perfil do usuario |

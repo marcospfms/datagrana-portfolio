@@ -33,7 +33,7 @@ O **Portfolio** e um sistema de gestao de carteiras de investimento em **Renda V
 
 ### 1.2 Fluxo do Usuario
 
-1. Login com Google (cria usuario se nao existe)
+1. Login com Google ou email/senha (cria usuario se nao existe no Google)
 2. Criar uma Account (conta na corretora)
 3. Cadastrar compras de ativos (posicoes consolidadas)
 4. Criar Portfolio com ativos e percentuais
@@ -43,7 +43,7 @@ O **Portfolio** e um sistema de gestao de carteiras de investimento em **Renda V
 
 | Funcionalidade | Descricao |
 |----------------|-----------|
-| **Login Social** | Autenticacao exclusiva via Google OAuth |
+| **Login** | Autenticacao via Google OAuth ou email/senha |
 | **Accounts** | Contas em corretoras para organizar investimentos |
 | **Compras** | Registro de compras de ativos (posicao consolidada) |
 | **Portfolio** | Nome, investimento mensal, objetivo/meta |
@@ -95,7 +95,7 @@ Referencia principal:
 
 | Tabela | Descricao |
 |--------|-----------|
-| `users` | Usuarios do sistema (login Google) |
+| `users` | Usuarios do sistema (login Google ou email/senha) |
 | `personal_access_tokens` | Tokens Sanctum |
 | `banks` | Bancos/Corretoras disponiveis |
 | `accounts` | Contas do usuario em corretoras |
@@ -141,6 +141,11 @@ Referencia principal:
 7. Backend cria/atualiza usuario no banco
 8. Backend retorna Bearer token Sanctum para o app
 
+Fluxo alternativo (email/senha):
+1. App envia email e senha para API (`POST /api/auth/login`)
+2. Backend valida credenciais
+3. Backend retorna Bearer token Sanctum para o app
+
 ### 4.2 Configuracoes
 
 - `config/services.php`: credenciais Google
@@ -158,6 +163,7 @@ Referencia principal:
 ### 4.5 Requests
 
 - `GoogleAuthRequest`: `app/Http/Requests/Auth/GoogleAuthRequest.php`
+- `LoginRequest`: `app/Http/Requests/Auth/LoginRequest.php`
 - `UpdateProfileRequest`: `app/Http/Requests/Auth/UpdateProfileRequest.php`
 - `UpdatePasswordRequest`: `app/Http/Requests/Auth/UpdatePasswordRequest.php`
 
@@ -200,7 +206,7 @@ Referencia principal:
 
 ### 6.2 Endpoints
 
-- Auth: `POST /api/auth/google`, `GET /api/auth/me`, `GET /api/auth/profile`, `PATCH /api/auth/profile`, `PUT /api/auth/password`, `POST /api/auth/logout`, `POST /api/auth/logout-all`
+- Auth: `POST /api/auth/login`, `POST /api/auth/google`, `GET /api/auth/me`, `GET /api/auth/profile`, `PATCH /api/auth/profile`, `PUT /api/auth/password`, `POST /api/auth/logout`, `POST /api/auth/logout-all`
 - Banks/Accounts: `GET /api/banks`, `GET/POST/PUT/DELETE /api/accounts`
 - Companies: `GET /api/companies/categories`, `GET /api/companies`, `GET /api/companies/popular`, `GET /api/companies/{companyTicker}`
 - Consolidated: `GET /api/consolidated`, `GET /api/consolidated/{id}`, `POST /api/consolidated`, `PUT /api/consolidated/{id}`, `DELETE /api/consolidated/{id}`, `GET /api/consolidated/summary`
@@ -325,7 +331,7 @@ Todas as fases descritas abaixo estao implementadas no projeto atual.
 O **DataGrana Portfolio** e uma API REST focada em gestao de carteiras de investimento em **Renda Variavel** com as seguintes caracteristicas:
 
 **Fluxo do Usuario:**
-1. Login com Google (cria usuario se nao existe)
+1. Login com Google ou email/senha (cria usuario se nao existe no Google)
 2. Criar uma Account (conta na corretora)
 3. Cadastrar compras de ativos (posicoes consolidadas)
 4. Criar Portfolio com ativos e percentuais
@@ -337,7 +343,8 @@ O **DataGrana Portfolio** e uma API REST focada em gestao de carteiras de invest
 - User → Portfolio → Composition
 
 **Endpoints Principais:**
-- `POST /api/auth/google` - Login
+- `POST /api/auth/login` - Login
+- `POST /api/auth/google` - Login Google
 - `GET /api/auth/profile` - Perfil
 - `PATCH /api/auth/profile` - Atualizar perfil
 - `PUT /api/auth/password` - Atualizar senha
