@@ -19,7 +19,7 @@ class ConsolidatedController extends BaseController
         ]);
 
         $accountIds = $request->user()->accounts()->pluck('id');
-        $perPage = $request->integer('per_page', 20);
+        $perPage = $request->integer('per_page', 10);
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->when($request->account_id, fn ($query, $accountId) =>
