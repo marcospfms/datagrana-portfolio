@@ -86,7 +86,7 @@ class AccountController extends BaseController
 
         if ($account->hasActivePositions()) {
             return $this->sendError(
-                'Nao e possivel excluir uma conta com posicoes ativas. Encerre ou transfira as posicoes primeiro.',
+                'Não é possível excluir uma conta com posicoes ativas.',
                 [],
                 409
             );

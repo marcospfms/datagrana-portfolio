@@ -77,9 +77,16 @@ class ConsolidatedController extends BaseController
             $invested = $items->sum('total_purchased');
             $current = $items->sum('balance');
             $profit = $current - $invested;
+            $first = $items->first();
+            $category = $first?->companyTicker?->company?->companyCategory
+                ?? $first?->treasure?->treasureCategory;
+            $categoryColor = $category?->color_hex;
+            $categoryIcon = $category?->icon;
 
             return [
                 'category' => $categoryName,
+                'color_hex' => $categoryColor,
+                'icon' => $categoryIcon,
                 'count' => $items->count(),
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
@@ -90,6 +97,7 @@ class ConsolidatedController extends BaseController
 
         $byAccount = $consolidated->groupBy('account_id')->map(function ($items) {
             $account = $items->first()->account;
+            $bank = $account->bank;
             $invested = $items->sum('total_purchased');
             $current = $items->sum('balance');
             $profit = $current - $invested;
@@ -97,7 +105,8 @@ class ConsolidatedController extends BaseController
             return [
                 'account_id' => $account->id,
                 'account_name' => $account->nickname ?? $account->account,
-                'bank' => $account->bank?->nickname ?? $account->bank?->name,
+                'bank' => $bank?->nickname ?? $bank?->name,
+                'bank_photo' => $bank?->photo ? trim($bank->photo) : null,
                 'count' => $items->count(),
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
