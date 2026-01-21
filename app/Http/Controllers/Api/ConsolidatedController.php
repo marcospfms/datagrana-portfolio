@@ -15,11 +15,10 @@ class ConsolidatedController extends BaseController
             'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'closed' => ['nullable', 'boolean'],
             'search' => ['nullable', 'string', 'min:1', 'max:100'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $accountIds = $request->user()->accounts()->pluck('id');
-        $perPage = $request->integer('per_page', 10);
+        $perPage = 10;
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->when($request->account_id, fn ($query, $accountId) =>
@@ -56,7 +55,7 @@ class ConsolidatedController extends BaseController
             ->paginate($perPage)
             ->withQueryString();
 
-        return $this->sendResponse(ConsolidatedResource::collection($consolidated));
+        return ConsolidatedResource::collection($consolidated)->response();
     }
 
     public function show(Consolidated $consolidated): JsonResponse
