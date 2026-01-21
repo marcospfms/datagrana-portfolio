@@ -14,9 +14,12 @@ class ConsolidatedController extends BaseController
         $request->validate([
             'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'closed' => ['nullable', 'boolean'],
+            'search' => ['nullable', 'string', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $accountIds = $request->user()->accounts()->pluck('id');
+        $perPage = $request->integer('per_page', 20);
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->when($request->account_id, fn ($query, $accountId) =>
@@ -25,13 +28,33 @@ class ConsolidatedController extends BaseController
             ->when($request->has('closed'), fn ($query) =>
                 $query->where('closed', $request->boolean('closed'))
             )
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search');
+
+                $query->where(function ($filterQuery) use ($search) {
+                    $filterQuery->whereHas('companyTicker.company', function ($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('nickname', 'like', "%{$search}%");
+                    })
+                        ->orWhereHas('companyTicker', function ($tickerQuery) use ($search) {
+                            $tickerQuery->where('code', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('treasure', function ($treasureQuery) use ($search) {
+                            $treasureQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->with([
                 'companyTicker.company.companyCategory',
                 'treasure.treasureCategory',
                 'account.bank',
             ])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('closed', 'asc')
+            ->orderByRaw('CASE WHEN treasure_id IS NOT NULL THEN (SELECT code FROM treasures WHERE id = treasure_id) END ASC')
+            ->orderByRaw('CASE WHEN company_ticker_id IS NOT NULL THEN (SELECT code FROM company_tickers WHERE id = company_ticker_id) END ASC')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return $this->sendResponse(ConsolidatedResource::collection($consolidated));
     }
