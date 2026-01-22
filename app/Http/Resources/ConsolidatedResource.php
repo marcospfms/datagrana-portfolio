@@ -28,6 +28,12 @@ class ConsolidatedResource extends JsonResource
             'profit_percentage' => (string) $this->profit_percentage,
             'account' => new AccountResource($this->whenLoaded('account')),
             'company_ticker' => new CompanyTickerResource($this->whenLoaded('companyTicker')),
+            'company_transactions' => CompanyTransactionResource::collection(
+                $this->whenLoaded('companyTransactions')
+            ),
+            'treasure_transactions' => TreasureTransactionResource::collection(
+                $this->whenLoaded('treasureTransactions')
+            ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

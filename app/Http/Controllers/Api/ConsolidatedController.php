@@ -62,15 +62,64 @@ class ConsolidatedController extends BaseController
     {
         $this->authorize('view', $consolidated);
 
-        return $this->sendResponse(
-            new ConsolidatedResource(
-                $consolidated->load(
-                    'companyTicker.company.companyCategory',
-                    'treasure.treasureCategory',
-                    'account.bank'
-                )
-            )
+        $consolidated->load([
+            'companyTicker.company.companyCategory',
+            'treasure.treasureCategory',
+            'account.bank',
+        ]);
+
+        $companyTransactions = $consolidated->companyTransactions()
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(fn ($transaction) => [
+                'id' => $transaction->id,
+                'type' => 'company',
+                'date' => $transaction->date?->toISOString(),
+                'operation' => $transaction->operation,
+                'quantity' => (string) $transaction->quantity,
+                'price' => (string) $transaction->price,
+                'total_value' => (string) $transaction->total_value,
+                'created_at' => $transaction->created_at?->toISOString(),
+                'updated_at' => $transaction->updated_at?->toISOString(),
+            ]);
+
+        $treasureTransactions = $consolidated->treasureTransactions()
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(fn ($transaction) => [
+                'id' => $transaction->id,
+                'type' => 'treasure',
+                'date' => $transaction->date?->toISOString(),
+                'operation' => $transaction->operation,
+                'quantity' => (string) $transaction->quantity,
+                'price' => $transaction->price !== null ? (string) $transaction->price : null,
+                'invested_value' => (string) $transaction->invested_value,
+                'created_at' => $transaction->created_at?->toISOString(),
+                'updated_at' => $transaction->updated_at?->toISOString(),
+            ]);
+
+        $transactions = $companyTransactions
+            ->concat($treasureTransactions)
+            ->sortByDesc('date')
+            ->values();
+
+        $perPage = 10;
+        $page = (int) request()->query('page', 1);
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $transactions->forPage($page, $perPage)->values(),
+            $transactions->count(),
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
         );
+
+        return $this->sendResponse([
+            'position' => new ConsolidatedResource($consolidated),
+            'transactions' => $paginated,
+        ]);
     }
 
     public function summary(Request $request): JsonResponse
