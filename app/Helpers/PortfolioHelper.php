@@ -74,19 +74,25 @@ class PortfolioHelper
                 $lastPrice = $composition->companyTicker->last_price ?? null;
             }
 
-            $crossingData[$key] = [
-                'ticker' => $composition->treasure_id
-                    ? ($composition->treasure->code ?? 'N/A')
-                    : ($composition->companyTicker->code ?? 'N/A'),
-                'name' => $composition->treasure_id
-                    ? ($composition->treasure->name ?? 'N/A')
-                    : ($composition->companyTicker->company->name ?? 'N/A'),
-                'category' => $composition->treasure_id
-                    ? ($composition->treasure->treasureCategory->name ?? 'N/A')
-                    : ($composition->companyTicker->company->companyCategory->name ?? 'N/A'),
-                'reference' => $composition->treasure_id
-                    ? ($composition->treasure->treasureCategory->reference ?? 'N/A')
-                    : ($composition->companyTicker->company->companyCategory->reference ?? 'N/A'),
+                $crossingData[$key] = [
+                    'ticker' => $composition->treasure_id
+                        ? ($composition->treasure->code ?? 'N/A')
+                        : ($composition->companyTicker->code ?? 'N/A'),
+                    'name' => $composition->treasure_id
+                        ? ($composition->treasure->name ?? 'N/A')
+                        : ($composition->companyTicker->company->name ?? 'N/A'),
+                    'category' => $composition->treasure_id
+                        ? ($composition->treasure->treasureCategory->name ?? 'N/A')
+                        : ($composition->companyTicker->company->companyCategory->name ?? 'N/A'),
+                    'category_color' => $composition->treasure_id
+                        ? ($composition->treasure->treasureCategory->color_hex ?? null)
+                        : ($composition->companyTicker->company->companyCategory->color_hex ?? null),
+                    'category_icon' => $composition->treasure_id
+                        ? ($composition->treasure->treasureCategory->icon ?? null)
+                        : ($composition->companyTicker->company->companyCategory->icon ?? null),
+                    'reference' => $composition->treasure_id
+                        ? ($composition->treasure->treasureCategory->reference ?? 'N/A')
+                        : ($composition->companyTicker->company->companyCategory->reference ?? 'N/A'),
                 'ideal_percentage' => $composition->percentage,
                 'dividend_received' => 0,
                 'balance' => 0,
@@ -166,6 +172,7 @@ class PortfolioHelper
                 }
 
                 $idealPercentage = $history ? $history->percentage : 0;
+                $displayIdealPercentage = 0;
                 $toBuyQuantity = self::calculateToBuyQuantity(
                     $idealPercentage,
                     $portfolio->target_value,
@@ -183,10 +190,16 @@ class PortfolioHelper
                     'category' => $consolidatedAsset->treasure_id
                         ? ($consolidatedAsset->treasure->treasureCategory->name ?? 'N/A')
                         : ($consolidatedAsset->companyTicker->company->companyCategory->name ?? 'N/A'),
+                    'category_color' => $consolidatedAsset->treasure_id
+                        ? ($consolidatedAsset->treasure->treasureCategory->color_hex ?? null)
+                        : ($consolidatedAsset->companyTicker->company->companyCategory->color_hex ?? null),
+                    'category_icon' => $consolidatedAsset->treasure_id
+                        ? ($consolidatedAsset->treasure->treasureCategory->icon ?? null)
+                        : ($consolidatedAsset->companyTicker->company->companyCategory->icon ?? null),
                     'reference' => $consolidatedAsset->treasure_id
                         ? ($consolidatedAsset->treasure->treasureCategory->reference ?? 'N/A')
                         : ($consolidatedAsset->companyTicker->company->companyCategory->reference ?? 'N/A'),
-                    'ideal_percentage' => $idealPercentage,
+                    'ideal_percentage' => $displayIdealPercentage,
                     'dividend_received' => $consolidatedAsset->dividend_received ?? 0,
                     'profit' => $consolidatedAsset->profit ?? 0,
                     'profit_percentage' => $consolidatedAsset->profit_percentage ?? 0,
