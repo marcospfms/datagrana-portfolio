@@ -6,6 +6,18 @@
 
 ---
 
+## Status atual
+
+- ✅ CRUD de carteiras, composicoes e validacoes implementados.
+- ✅ Exclusao com historico (`save_to_history`) suportada no backend.
+- 🔜 Evolucao pos-MVP: update em lote e historico detalhado no app.
+- Arquivos principais:
+  - `app/Http/Controllers/Api/PortfolioController.php`
+  - `app/Http/Controllers/Api/CompositionController.php`
+  - `app/Helpers/PortfolioHelper.php`
+  - `app/Services/Portfolio/CrossingService.php`
+  - `routes/api.php`
+
 ## Indice
 
 1. [Objetivo da Fase](#1-objetivo-da-fase)
@@ -55,7 +67,7 @@ Implementar o sistema de carteiras ideais:
 
 ### Duplicatas
 - Sem constraint no banco para impedir duplicatas
-- O app deve evitar ativos duplicados na carteira
+- O app deve evitar ativos duplicados na carteira (**implementado**)
 
 ---
 
@@ -73,56 +85,16 @@ Implementar o sistema de carteiras ideais:
 
 ## 3. Estrutura de Arquivos
 
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   └── Api/
-│   │       ├── PortfolioController.php
-│   │       └── CompositionController.php
-│   ├── Requests/
-│   │   └── Portfolio/
-│   │       ├── StorePortfolioRequest.php
-│   │       ├── UpdatePortfolioRequest.php
-│   │       ├── StoreCompositionRequest.php
-│   │       ├── UpdateCompositionRequest.php
-│   │       └── UpdateCompositionBatchRequest.php
-│   └── Resources/
-│       ├── PortfolioResource.php
-│       ├── CompositionResource.php
-│       └── CompositionHistoryResource.php
-│       ├── TreasureResource.php
-│       └── TreasureCategoryResource.php
-├── Models/
-│   ├── Portfolio.php
-│   ├── Composition.php
-│   └── CompositionHistory.php
-└── Policies/
-    └── PortfolioPolicy.php
-
-database/
-├── migrations/
-│   └── portfolio/
-│       ├── 2025_01_08_000001_create_portfolios_table.php
-│       ├── 2025_01_08_000002_create_compositions_table.php
-│       └── 2025_01_08_000003_create_composition_histories_table.php
-└── factories/
-    ├── PortfolioFactory.php
-    ├── CompositionFactory.php
-    └── CompositionHistoryFactory.php
-
-tests/
-└── Feature/
-    └── Portfolio/
-        ├── PortfolioIndexTest.php
-        ├── PortfolioStoreTest.php
-        ├── PortfolioUpdateTest.php
-        ├── PortfolioDestroyTest.php
-        ├── CompositionStoreTest.php
-        ├── CompositionUpdateTest.php
-        ├── CompositionUpdateBatchTest.php
-        └── CompositionDestroyTest.php
-```
+Estrutura principal:
+- `app/Http/Controllers/Api/PortfolioController.php`
+- `app/Http/Controllers/Api/CompositionController.php`
+- `app/Http/Requests/Portfolio/*`
+- `app/Http/Resources/PortfolioResource.php`, `CompositionResource.php`, `CompositionHistoryResource.php`
+- `app/Models/Portfolio.php`, `Composition.php`, `CompositionHistory.php`
+- `app/Policies/PortfolioPolicy.php`
+- `database/migrations/portfolio/*`
+- `database/factories/*`
+- `tests/Feature/Portfolio/*`
 
 ---
 
@@ -227,7 +199,7 @@ Rotas implementadas em `routes/api.php`.
 - [x] Criar migration `portfolios`
 - [x] Criar migration `compositions`
 - [x] Criar migration `composition_histories`
-- [ ] Rodar `php artisan migrate`
+- [x] Rodar `php artisan migrate`
 - [x] Criar `PortfolioFactory`
 - [x] Criar `CompositionFactory`
 - [x] Criar `CompositionHistoryFactory`
@@ -263,21 +235,39 @@ Rotas implementadas em `routes/api.php`.
 - [x] Criar `CompositionUpdateTest`
 - [x] Criar `CompositionUpdateBatchTest`
 - [x] Criar `CompositionDestroyTest`
-- [ ] Rodar `php artisan test` - todos passando
+- [x] Rodar `php artisan test` - todos passando
+
+### 12.5 Frontend (App)
+
+- [x] Listar carteiras (GET `/api/portfolios`) com paginacao e infinite scroll
+- [x] Criar carteira (POST `/api/portfolios`)
+- [x] Editar carteira (PUT `/api/portfolios/{id}`)
+- [x] Remover carteira (DELETE `/api/portfolios/{id}`)
+- [x] Detalhe da carteira (GET `/api/portfolios/{id}`)
+- [x] Adicionar composicao (POST `/api/portfolios/{id}/compositions`)
+- [x] Atualizar composicao (PUT `/api/compositions/{id}`)
+- [x] Remover composicao (DELETE `/api/compositions/{id}`)
+- [x] Aviso quando soma != 100%
+- [x] Bloqueio de ativos duplicados no app
 
 ### 12.5 Validacao Final
 
-- [ ] Testar `GET /api/portfolios`
-- [ ] Testar `POST /api/portfolios`
-- [ ] Testar `GET /api/portfolios/{id}`
-- [ ] Testar `PUT /api/portfolios/{id}`
-- [ ] Testar `DELETE /api/portfolios/{id}`
-- [ ] Testar `POST /api/portfolios/{id}/compositions`
-- [ ] Testar `PUT /api/compositions/{id}`
-- [ ] Testar `PUT /api/compositions/batch`
-- [ ] Testar `DELETE /api/compositions/{id}`
+- [x] Testar `GET /api/portfolios`
+- [x] Testar `POST /api/portfolios`
+- [x] Testar `GET /api/portfolios/{id}`
+- [x] Testar `PUT /api/portfolios/{id}`
+- [x] Testar `DELETE /api/portfolios/{id}`
+- [x] Testar `POST /api/portfolios/{id}/compositions`
+- [x] Testar `PUT /api/compositions/{id}`
+- [x] Testar `PUT /api/compositions/batch`
+- [x] Testar `DELETE /api/compositions/{id}`
 
 ---
+
+## Evolucao apos MVP
+
+- UI para atualizar composicoes em lote (PUT `/api/compositions/batch`)
+- Exibir historico de composicoes removidas (`composition_histories`)
 
 ## Endpoints da V5
 

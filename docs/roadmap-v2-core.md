@@ -8,6 +8,17 @@
 
 ---
 
+## Status atual
+
+- ✅ Endpoints de bancos e contas implementados.
+- Arquivos principais:
+  - `app/Http/Controllers/Api/AccountController.php`
+  - `app/Http/Controllers/Api/BankController.php`
+  - `app/Models/Account.php`, `app/Models/Bank.php`
+  - `app/Http/Resources/AccountResource.php`, `app/Http/Resources/BankResource.php`
+  - `app/Policies/AccountPolicy.php`
+  - `routes/api.php`
+
 ## Indice
 
 1. [Objetivo da Fase](#1-objetivo-da-fase)
@@ -55,43 +66,16 @@ Implementar a estrutura de contas em corretoras:
 
 ## 3. Estrutura de Arquivos
 
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   └── Api/
-│   │       └── AccountController.php
-│   ├── Requests/
-│   │   └── Account/
-│   │       ├── StoreAccountRequest.php
-│   │       └── UpdateAccountRequest.php
-│   └── Resources/
-│       ├── BankResource.php
-│       └── AccountResource.php
-├── Models/
-│   ├── Bank.php
-│   └── Account.php
-└── Policies/
-    └── AccountPolicy.php
-
-database/
-├── migrations/
-│   ├── 2025_01_01_000001_create_banks_table.php
-│   └── 2025_01_01_000002_create_accounts_table.php
-└── seeders/
-    └── BankSeeder.php
-
-tests/
-└── Feature/
-    ├── Bank/
-    │   └── BankListTest.php
-    └── Account/
-        ├── AccountIndexTest.php
-        ├── AccountStoreTest.php
-        ├── AccountShowTest.php
-        ├── AccountUpdateTest.php
-        └── AccountDestroyTest.php
-```
+Estrutura principal:
+- `app/Http/Controllers/Api/AccountController.php`
+- `app/Http/Requests/Account/*`
+- `app/Http/Resources/BankResource.php`, `app/Http/Resources/AccountResource.php`
+- `app/Models/Bank.php`, `app/Models/Account.php`
+- `app/Policies/AccountPolicy.php`
+- `database/migrations/core/2025_01_01_000005_create_banks_table.php`
+- `database/migrations/core/2025_01_01_000006_create_accounts_table.php`
+- `database/seeders/BankSeeder.php`
+- `tests/Feature/Bank/*`, `tests/Feature/Account/*`
 
 ---
 

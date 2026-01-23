@@ -6,6 +6,17 @@
 
 ---
 
+## Status atual
+
+- ✅ Consolidated + transacoes implementados (create, update, delete, summary).
+- ✅ Regras de consolidacao replicadas do datagrana-web (`ConsolidationService`).
+- Arquivos principais:
+  - `app/Http/Controllers/Api/ConsolidatedController.php`
+  - `app/Http/Controllers/Api/ConsolidatedTransactionController.php`
+  - `app/Services/Application/Consolidated/ConsolidationService.php`
+  - `app/Http/Requests/Consolidated/*`
+  - `routes/api.php`
+
 ## Indice
 
 1. [Objetivo da Fase](#1-objetivo-da-fase)
@@ -81,61 +92,18 @@ Balance é calculado a partir do preço atual do ativo e da quantidade atual.
 
 ## 3. Estrutura de Arquivos
 
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   └── Api/
-│   │       ├── ConsolidatedController.php
-│   │       └── ConsolidatedTransactionController.php
-│   ├── Requests/
-│   │   └── Consolidated/
-│   │       ├── StoreTransactionRequest.php
-│   │       └── UpdateTransactionRequest.php
-│   └── Resources/
-│       ├── ConsolidatedResource.php
-│       ├── CompanyTransactionResource.php
-│       └── TreasureTransactionResource.php
-├── Models/
-│   ├── Consolidated.php
-│   ├── CompanyTransaction.php
-│   ├── TreasureTransaction.php
-│   ├── Treasure.php
-│   ├── TreasureCategory.php
-│   ├── Earning.php
-│   └── UserNetBalance.php
-└── Services/
-    └── Consolidated/
-        └── ConsolidationService.php
-└── Policies/
-    └── ConsolidatedPolicy.php
-app/
-└── Exceptions/
-    └── InsufficientAssetException.php
-
-database/
-├── migrations/
-│   └── consolidated/
-│       ├── 2025_01_06_000001_create_consolidated_table.php
-│       ├── 2025_01_06_000002_create_treasure_transaction_table.php
-│       └── 2025_01_06_000004_create_company_transactions_table.php
-└── factories/
-    ├── ConsolidatedFactory.php
-    ├── CompanyTransactionFactory.php
-    ├── TreasureTransactionFactory.php
-    ├── TreasureCategoryFactory.php
-    └── TreasureFactory.php
-
-tests/
-└── Feature/
-    └── Consolidated/
-        ├── ConsolidatedIndexTest.php
-        ├── ConsolidatedShowTest.php
-        └── ConsolidatedSummaryTest.php
-        ├── ConsolidatedTransactionStoreTest.php
-        ├── ConsolidatedTransactionUpdateTest.php
-        └── ConsolidatedTransactionDestroyTest.php
-```
+Estrutura principal:
+- `app/Http/Controllers/Api/ConsolidatedController.php`
+- `app/Http/Controllers/Api/ConsolidatedTransactionController.php`
+- `app/Http/Requests/Consolidated/*`
+- `app/Http/Resources/ConsolidatedResource.php`
+- `app/Models/Consolidated.php`, `CompanyTransaction.php`, `TreasureTransaction.php`, `Treasure.php`, `TreasureCategory.php`
+- `app/Services/Application/Consolidated/ConsolidationService.php`
+- `app/Policies/ConsolidatedPolicy.php`
+- `app/Exceptions/InsufficientAssetException.php`
+- `database/migrations/consolidated/*`
+- `database/factories/*`
+- `tests/Feature/Consolidated/*`
 
 ---
 
@@ -348,7 +316,7 @@ Implementado em `tests/Feature/Consolidated/ConsolidatedTransactionDestroyTest.p
 - [x] Criar migration `consolidated`
 - [x] Criar migration `treasure_transaction`
 - [x] Criar migration `company_transactions`
-- [ ] Rodar `php artisan migrate`
+- [x] Rodar `php artisan migrate`
 - [x] Criar `ConsolidatedFactory`
 - [x] Criar `CompanyTransactionFactory`
 - [x] Criar `TreasureTransactionFactory`
@@ -389,16 +357,16 @@ Implementado em `tests/Feature/Consolidated/ConsolidatedTransactionDestroyTest.p
 - [x] Criar `ConsolidatedTransactionStoreTest`
 - [x] Criar `ConsolidatedTransactionUpdateTest`
 - [x] Criar `ConsolidatedTransactionDestroyTest`
-- [ ] Rodar `php artisan test` - todos passando
+- [x] Rodar `php artisan test` - todos passando
 
 ### 12.5 Validacao Final
 
-- [ ] Testar `GET /api/consolidated`
-- [ ] Testar `GET /api/consolidated/{id}`
-- [ ] Testar `GET /api/consolidated/summary`
-- [ ] Testar `POST /api/consolidated/transactions`
-- [ ] Testar `PUT /api/consolidated/transactions/{type}/{id}`
-- [ ] Testar `DELETE /api/consolidated/transactions/{type}/{id}`
+- [x] Testar `GET /api/consolidated`
+- [x] Testar `GET /api/consolidated/{id}`
+- [x] Testar `GET /api/consolidated/summary`
+- [x] Testar `POST /api/consolidated/transactions`
+- [x] Testar `PUT /api/consolidated/transactions/{type}/{id}`
+- [x] Testar `DELETE /api/consolidated/transactions/{type}/{id}`
 
 ---
 

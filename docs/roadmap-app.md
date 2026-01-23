@@ -4,6 +4,16 @@
 
 ---
 
+## Status atual (Backend + App)
+
+- ✅ V1 Auth, V2 Core, V3 Companies (search), V4 Consolidated, V5 Portfolio e V6 Crossing implementados no backend.
+- ✅ App consumindo: auth, accounts, consolidated (lista, resumo, transacoes), portfolios/compositions, crossing.
+- 🔜 Evolucao pos-MVP (app): companies categories/popular/detail, update batch de composicoes, historico detalhado de composicoes.
+- Arquivos de referencia (app):
+  - `datagrana-app/app/(tabs)/(home)/index.tsx`
+  - `datagrana-app/app/(tabs)/(assets)/transactions/*`
+  - `datagrana-app/app/(tabs)/(portfolios)/*`
+
 ## Sumario
 
 1. [Visao Geral](#1-visao-geral)

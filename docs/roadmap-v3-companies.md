@@ -6,6 +6,17 @@
 
 ---
 
+## Status atual
+
+- ✅ Backend de companies implementado.
+- ✅ No app, o consumo principal é `GET /api/companies?search=...`.
+- 🔜 Evolucao pos-MVP (frontend): categorias, populares e detalhes completos.
+- Arquivos principais:
+  - `app/Http/Controllers/Api/AssetController.php`
+  - `app/Models/Company.php`, `app/Models/CompanyTicker.php`, `app/Models/CompanyCategory.php`
+  - `app/Http/Resources/CompanyResource.php`, `app/Http/Resources/CompanyTickerResource.php`
+  - `routes/api.php`
+
 ## Indice
 
 1. [Objetivo da Fase](#1-objetivo-da-fase)
@@ -51,46 +62,14 @@ Implementar a estrutura de ativos de renda variavel:
 
 ## 3. Estrutura de Arquivos
 
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   └── Api/
-│   │       └── AssetController.php
-│   └── Resources/
-│       ├── CompanyCategoryResource.php
-│       ├── CompanyResource.php
-│       └── CompanyTickerResource.php
-└── Models/
-    ├── Coin.php
-    ├── CompanyCategory.php
-    ├── Company.php
-    └── CompanyTicker.php
-
-database/
-├── migrations/
-│   └── companies/
-│       ├── 2025_01_04_000001_create_company_category_table.php
-│       ├── 2025_01_04_000002_create_companies_table.php
-│       └── 2025_01_04_000003_create_company_tickers_table.php
-└── seeders/
-    ├── CoinSeeder.php
-    └── CompanyCategorySeeder.php
-
-database/
-└── factories/
-    ├── CoinFactory.php
-    ├── CompanyCategoryFactory.php
-    ├── CompanyFactory.php
-    └── CompanyTickerFactory.php
-
-tests/
-└── Feature/
-    └── Asset/
-        ├── AssetCategoriesTest.php
-        ├── AssetSearchTest.php
-        └── AssetShowTest.php
-```
+Estrutura principal:
+- `app/Http/Controllers/Api/AssetController.php`
+- `app/Http/Resources/CompanyCategoryResource.php`, `CompanyResource.php`, `CompanyTickerResource.php`
+- `app/Models/Coin.php`, `CompanyCategory.php`, `Company.php`, `CompanyTicker.php`
+- `database/migrations/companies/*`
+- `database/seeders/CoinSeeder.php`, `CompanyCategorySeeder.php`
+- `database/factories/*`
+- `tests/Feature/Asset/*`
 
 ---
 

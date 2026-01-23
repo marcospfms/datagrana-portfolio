@@ -4,6 +4,16 @@
 
 ---
 
+## Status atual
+
+- ✅ Backend de autenticacao implementado e em uso pelo app.
+- Arquivos principais:
+  - `app/Http/Controllers/Api/AuthController.php`
+  - `app/Services/Auth/GoogleAuthService.php`
+  - `app/Http/Requests/Auth/*`
+  - `app/Http/Resources/UserResource.php`
+  - `routes/api.php`
+
 ## Contexto do Projeto
 
 Este roadmap assume que o projeto **datagrana-portfolio** ja existe e esta configurado:
@@ -16,11 +26,7 @@ Este roadmap assume que o projeto **datagrana-portfolio** ja existe e esta confi
 
 ### Estrategia de Migracao
 
-```
-datagrana-web (atual) → sera deprecated
-                ↓
-datagrana-portfolio (novo) → substitui completamente
-```
+Fluxo: **datagrana-web (atual)** → **datagrana-portfolio (novo)**.
 
 O **datagrana-portfolio** duplicara Models, Controllers e Services do `datagrana-web`, mas focando exclusivamente em API REST para consumo mobile.
 
@@ -48,23 +54,14 @@ Implementar o sistema de autenticacao completo usando Google OAuth **client-side
 
 ### Fluxo de Autenticacao (Client-Side OAuth)
 
-```
 1. App React Native inicia login Google localmente (SDK nativo)
-   ↓
 2. Google SDK no app abre tela de login
-   ↓
 3. Usuario faz login no Google
-   ↓
 4. Google retorna id_token para o APP
-   ↓
 5. App envia id_token para API Laravel (POST /api/auth/google)
-   ↓
 6. Backend valida id_token com Google (verifyIdToken)
-   ↓
 7. Backend cria/atualiza usuario no banco
-   ↓
 8. Backend retorna Bearer token Sanctum para o app
-```
 
 **Importante:**
 - ❌ Nao ha callback/redirect server-side
@@ -84,20 +81,7 @@ Implementar o sistema de autenticacao completo usando Google OAuth **client-side
 
 ### 2.1 Pacotes Composer
 
-```json
-{
-    "require": {
-        "php": "^8.2",
-        "laravel/framework": "^12.0",
-        "laravel/sanctum": "^4.0",
-        "google/apiclient": "^2.0"
-    },
-    "require-dev": {
-        "laravel/pint": "^1.0",
-        "phpunit/phpunit": "^11.0"
-    }
-}
-```
+Dependencias definidas em `composer.json` e `composer.lock`.
 
 ### 2.2 Servicos Externos
 
@@ -112,42 +96,13 @@ Implementar o sistema de autenticacao completo usando Google OAuth **client-side
 
 O projeto ja existe. Verifique se as dependencias necessarias estao instaladas:
 
-```bash
-cd datagrana-portfolio
-
-# Verificar pacotes instalados
-composer show laravel/sanctum
-composer show google/apiclient
-
-# Se algum pacote estiver faltando, instale:
-composer require google/apiclient
-```
+Procedimento: verificar pacotes instalados via `composer show`. Instalar `google/apiclient` se necessario.
 
 ### 3.2 Configurar .env
 
 **Importante:** O banco de dados e **compartilhado** com `datagrana-web`.
 
-```env
-APP_NAME="DataGrana Portfolio"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# Banco de Dados (MESMO banco do datagrana-web)
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=datagrana
-DB_USERNAME=root
-DB_PASSWORD=
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
-
-# Sanctum
-SANCTUM_STATEFUL_DOMAINS=localhost,127.0.0.1
-```
+Variaveis configuradas em `.env`: `APP_*`, `DB_*`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SANCTUM_STATEFUL_DOMAINS`.
 
 ### 3.3 Configurar config/services.php
 
@@ -171,41 +126,15 @@ Implementado em `config/sanctum.php`.
 
 ## 4. Estrutura de Arquivos
 
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   └── Api/
-│   │       ├── BaseController.php
-│   │       └── AuthController.php
-│   ├── Requests/
-│   │   └── Auth/
-│   │       ├── GoogleAuthRequest.php
-│   │       ├── UpdatePasswordRequest.php
-│   │       └── UpdateProfileRequest.php
-│   └── Resources/
-│       └── UserResource.php
-├── Models/
-│   └── User.php
-└── Services/
-    └── Auth/
-        └── GoogleAuthService.php
-
-database/
-└── migrations/
-    └── 0001_01_01_000000_create_users_table.php
-
-routes/
-└── api.php
-
-tests/
-└── Feature/
-    └── Auth/
-        ├── GoogleAuthTest.php
-        ├── LogoutTest.php
-        ├── PasswordUpdateTest.php
-        └── ProfileUpdateTest.php
-```
+Estrutura principal:
+- `app/Http/Controllers/Api/AuthController.php`
+- `app/Http/Requests/Auth/*`
+- `app/Http/Resources/UserResource.php`
+- `app/Services/Auth/GoogleAuthService.php`
+- `app/Models/User.php`
+- `database/migrations/0001_01_01_000000_create_users_table.php`
+- `routes/api.php`
+- `tests/Feature/Auth/*`
 
 ---
 
@@ -345,19 +274,7 @@ Implementado em `tests/Feature/HealthCheckTest.php`.
 
 ### 10.6 Rodar Testes
 
-```bash
-# Rodar todos os testes
-php artisan test
-
-# Rodar apenas testes de auth
-php artisan test --filter=Auth
-
-# Rodar com coverage
-php artisan test --coverage
-
-# Rodar teste especifico
-php artisan test --filter=test_can_login_with_valid_google_token
-```
+Execucao de testes via `php artisan test` (e filtros conforme necessidade).
 
 ---
 
@@ -365,7 +282,7 @@ php artisan test --filter=test_can_login_with_valid_google_token
 
 ### 11.1 Setup
 
-- [ ] Verificar instalacao do `google/apiclient` (instalar se necessario)
+- [x] Verificar instalacao do `google/apiclient` (instalar se necessario)
 - [x] Configurar `.env` com credenciais Google OAuth
 - [x] Verificar `config/services.php` (adicionar Google)
 - [x] Revisar `config/cors.php` (manter completo)

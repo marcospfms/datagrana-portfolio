@@ -6,6 +6,17 @@
 
 ---
 
+## Status atual
+
+- ✅ Endpoint `/api/portfolios/{id}/crossing` implementado.
+- ✅ Regras de crossing replicadas do datagrana-web.
+- ✅ Inclui categorias (cor/icone) e status `unwind_position`.
+- Arquivos principais:
+  - `app/Helpers/PortfolioHelper.php`
+  - `app/Services/Portfolio/CrossingService.php`
+  - `app/Http/Controllers/Api/PortfolioController.php`
+  - `routes/api.php`
+
 ## Indice
 
 1. [Objetivo da Fase](#1-objetivo-da-fase)
@@ -105,27 +116,12 @@ Implementar a funcionalidade de **Crossing** (cruzamento):
 
 ## 3. Estrutura de Arquivos
 
-```
-app/
-├── Helpers/
-│   └── PortfolioHelper.php
-├── Services/
-│   └── Portfolio/
-│       └── CrossingService.php
-└── Http/
-    └── Controllers/
-        └── Api/
-            └── PortfolioController.php (atualizar)
-
-tests/
-└── Feature/
-    └── Portfolio/
-        └── CrossingTest.php
-tests/
-└── Unit/
-    └── Helpers/
-        └── PortfolioHelperTest.php
-```
+Estrutura principal:
+- `app/Helpers/PortfolioHelper.php`
+- `app/Services/Portfolio/CrossingService.php`
+- `app/Http/Controllers/Api/PortfolioController.php`
+- `tests/Feature/Portfolio/CrossingTest.php`
+- `tests/Unit/Helpers/PortfolioHelperTest.php`
 
 ---
 
@@ -173,17 +169,17 @@ Rota adicionada em `routes/api.php`.
 
 - [x] Criar `tests/Feature/Portfolio/CrossingTest.php`
 - [x] Criar `tests/Unit/Helpers/PortfolioHelperTest.php`
-- [ ] Rodar `php artisan test` - todos passando
+- [x] Rodar `php artisan test` - todos passando
 
 ### 9.3 Validacao Final
 
-- [ ] Testar `GET /api/portfolios/{id}/crossing` com posicoes
-- [ ] Testar com ativos sem posicao (not_positioned)
-- [ ] Testar com ativos no historico (unwind_position)
-- [ ] Verificar calculos de to_buy_quantity
-- [ ] Verificar ordenacao por categoria/ticker
-- [ ] Verificar totais calculados
-- [ ] Testar casos com `last_price = null`
+- [x] Testar `GET /api/portfolios/{id}/crossing` com posicoes
+- [x] Testar com ativos sem posicao (not_positioned)
+- [x] Testar com ativos no historico (unwind_position)
+- [x] Verificar calculos de to_buy_quantity
+- [x] Verificar ordenacao por categoria/ticker
+- [x] Verificar totais calculados
+- [x] Testar casos com `last_price = null`
 
 ---
 
@@ -197,36 +193,7 @@ Rota adicionada em `routes/api.php`.
 
 ## Resposta do Endpoint
 
-```json
-{
-  "success": true,
-  "data": {
-    "portfolio": {
-      "id": 1,
-      "name": "Meu Portfolio",
-      "target_value": "10000.00",
-      "month_value": "1000.00",
-      "total_percentage": "100.00"
-    },
-    "crossing": [
-      {
-        "ticker": "PETR4",
-        "name": "Petrobras",
-        "category": "Acoes",
-        "ideal_percentage": 25.0,
-        "total_purchased": 1500.0,
-        "balance": 1750.0,
-        "profit": 250.0,
-        "profit_percentage": 16.67,
-        "last_price": 35.0,
-        "to_buy_quantity": 21,
-        "to_buy_quantity_formatted": "21 cotas",
-        "status": "positioned"
-      }
-    ]
-  }
-}
-```
+Resposta: ver `app/Helpers/PortfolioHelper.php` (prepareCrossingData) e `app/Http/Resources/PortfolioResource.php`.
 
 ---
 
