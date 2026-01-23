@@ -24,9 +24,10 @@ class PortfolioController extends BaseController
             })
             ->withCount('compositions')
             ->orderBy('name')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        return $this->sendResponse(PortfolioResource::collection($portfolios));
+        return $this->sendResponse($portfolios);
     }
 
     public function store(StorePortfolioRequest $request): JsonResponse
@@ -120,6 +121,6 @@ class PortfolioController extends BaseController
         $ticker = $composition->companyTicker?->code ?? '';
         $companyName = $composition->companyTicker?->company?->name ?? '';
 
-        return $categoryOrder . $ticker . '_' . $companyName;
+        return $categoryOrder . '_' . $ticker . '_' . $companyName;
     }
 }
