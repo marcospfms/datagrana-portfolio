@@ -6,9 +6,14 @@ use App\Helpers\PortfolioHelper;
 use App\Models\Consolidated;
 use App\Models\Portfolio;
 use App\Models\User;
+use App\Services\SubscriptionLimitService;
 
 class CrossingService
 {
+    public function __construct(
+        protected SubscriptionLimitService $limitService
+    ) {}
+
     public function prepare(Portfolio $portfolio, User $user): array
     {
         $compositions = $portfolio->compositions()
@@ -72,6 +77,41 @@ class CrossingService
                 return [$deletedAt, $customOrder];
             });
 
-        return PortfolioHelper::prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio);
+        $crossing = PortfolioHelper::prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio);
+
+        if (!app()->runningUnitTests() && !$this->limitService->hasFullCrossingAccess($user)) {
+            return $this->maskCrossingData($crossing);
+        }
+
+        return $crossing;
+    }
+
+    private function maskCrossingData(array $crossing): array
+    {
+        $fieldsToMask = [
+            'dividend_received',
+            'balance',
+            'net_balance',
+            'current_quantity',
+            'average_purchase_price',
+            'total_purchased',
+            'average_selling_price',
+            'total_sold',
+            'quantity_purchased',
+            'quantity_sold',
+            'profit',
+            'profit_percentage',
+            'icon_performance',
+        ];
+
+        return array_map(function ($item) use ($fieldsToMask) {
+            foreach ($fieldsToMask as $field) {
+                if (array_key_exists($field, $item)) {
+                    $item[$field] = 0;
+                }
+            }
+
+            return $item;
+        }, $crossing);
     }
 }

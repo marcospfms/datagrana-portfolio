@@ -9,6 +9,9 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
+    protected $seed = true;
+    protected $seeder = \Database\Seeders\SubscriptionPlanSeeder::class;
+
     protected function createAuthenticatedUser(array $attributes = []): array
     {
         $user = \App\Models\User::factory()->create($attributes);

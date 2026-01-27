@@ -1,0 +1,117 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\SubscriptionPlan;
+use App\Models\SubscriptionPlanConfig;
+use Illuminate\Database\Seeder;
+
+class SubscriptionPlanSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $plans = [
+            [
+                'name' => 'Gratuito',
+                'slug' => 'free',
+                'description' => 'Ideal para começar a organizar seus investimentos',
+                'price_monthly' => 0,
+                'is_active' => true,
+                'display_order' => 1,
+                'revenuecat_product_id' => null,
+                'revenuecat_entitlement_id' => null,
+                'configs' => [
+                    'max_portfolios' => 1,
+                    'max_compositions' => 10,
+                    'max_positions' => 10,
+                    'max_accounts' => 1,
+                    'allow_full_crossing' => false,
+                    'allow_composition_history' => false,
+                    'allow_category_analysis' => false,
+                    'allow_multi_portfolio_analysis' => false,
+                ],
+            ],
+            [
+                'name' => 'Investidor Iniciante',
+                'slug' => 'starter',
+                'description' => 'Para investidores começando a diversificar',
+                'price_monthly' => 19.90,
+                'is_active' => true,
+                'display_order' => 2,
+                'revenuecat_product_id' => 'datagrana_starter_monthly',
+                'revenuecat_entitlement_id' => 'starter',
+                'configs' => [
+                    'max_portfolios' => 2,
+                    'max_compositions' => 25,
+                    'max_positions' => 25,
+                    'max_accounts' => 2,
+                    'allow_full_crossing' => true,
+                    'allow_composition_history' => true,
+                    'allow_category_analysis' => true,
+                    'allow_multi_portfolio_analysis' => false,
+                ],
+            ],
+            [
+                'name' => 'Investidor Pro',
+                'slug' => 'pro',
+                'description' => 'Para investidores ativos com múltiplas estratégias',
+                'price_monthly' => 39.90,
+                'is_active' => true,
+                'display_order' => 3,
+                'revenuecat_product_id' => 'datagrana_pro_monthly',
+                'revenuecat_entitlement_id' => 'pro',
+                'configs' => [
+                    'max_portfolios' => 4,
+                    'max_compositions' => 50,
+                    'max_positions' => 50,
+                    'max_accounts' => 4,
+                    'allow_full_crossing' => true,
+                    'allow_composition_history' => true,
+                    'allow_category_analysis' => true,
+                    'allow_multi_portfolio_analysis' => true,
+                ],
+            ],
+            [
+                'name' => 'Premium',
+                'slug' => 'premium',
+                'description' => 'Recursos ilimitados para investidores profissionais',
+                'price_monthly' => 79.90,
+                'is_active' => true,
+                'display_order' => 4,
+                'revenuecat_product_id' => 'datagrana_premium_monthly',
+                'revenuecat_entitlement_id' => 'premium',
+                'configs' => [
+                    'max_portfolios' => null,
+                    'max_compositions' => null,
+                    'max_positions' => null,
+                    'max_accounts' => null,
+                    'allow_full_crossing' => true,
+                    'allow_composition_history' => true,
+                    'allow_category_analysis' => true,
+                    'allow_multi_portfolio_analysis' => true,
+                ],
+            ],
+        ];
+
+        foreach ($plans as $planData) {
+            $configs = $planData['configs'];
+            unset($planData['configs']);
+
+            $plan = SubscriptionPlan::updateOrCreate(
+                ['slug' => $planData['slug']],
+                $planData
+            );
+
+            foreach ($configs as $key => $value) {
+                $isLimit = str_starts_with($key, 'max_');
+                SubscriptionPlanConfig::updateOrCreate(
+                    ['subscription_plan_id' => $plan->id, 'config_key' => $key],
+                    [
+                        'config_value' => $isLimit ? $value : null,
+                        'is_enabled' => $isLimit ? false : (bool) $value,
+                    ]
+                );
+            }
+        }
+    }
+}

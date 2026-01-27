@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -66,6 +67,19 @@ class User extends Authenticatable
     public function portfolios(): HasMany
     {
         return $this->hasMany(Portfolio::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(UserSubscription::class)
+            ->active()
+            ->orderByDesc('is_paid')
+            ->orderByDesc('created_at');
     }
 
     public function defaultAccount(): ?Account

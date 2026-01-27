@@ -3,8 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\Composition;
 use App\Models\Consolidated;
 use App\Models\Portfolio;
+use App\Models\User;
+use App\Observers\AccountObserver;
+use App\Observers\CompositionObserver;
+use App\Observers\ConsolidatedObserver;
+use App\Observers\PortfolioObserver;
+use App\Observers\UserObserver;
 use App\Policies\AccountPolicy;
 use App\Policies\ConsolidatedPolicy;
 use App\Policies\PortfolioPolicy;
@@ -33,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Account::class, AccountPolicy::class);
         Gate::policy(Consolidated::class, ConsolidatedPolicy::class);
         Gate::policy(Portfolio::class, PortfolioPolicy::class);
+        User::observe(UserObserver::class);
+        Portfolio::observe(PortfolioObserver::class);
+        Composition::observe(CompositionObserver::class);
+        Account::observe(AccountObserver::class);
+        Consolidated::observe(ConsolidatedObserver::class);
         $this->configureDefaults();
         $this->loadMigrations();
     }
@@ -73,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
             database_path('migrations/consolidated'),     // Consolidação (após companies/treasures)
             database_path('migrations/earnings'),         // Proventos (após consolidated)
             database_path('migrations/portfolio'),        // Portfólios (após companies/treasures)
+            database_path('migrations/subscription_limits'), // Assinaturas simplificadas (V7)
         ]);
     }
 }

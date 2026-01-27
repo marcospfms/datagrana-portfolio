@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             BankSeeder::class,
             CoinSeeder::class,
             CompanyCategorySeeder::class,
+            SubscriptionPlanSeeder::class,
         ]);
     }
 }

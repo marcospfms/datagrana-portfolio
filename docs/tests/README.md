@@ -51,6 +51,10 @@ Este arquivo registra cada teste criado e seu objetivo.
 - `tests/Feature/Portfolio/CrossingTest.php`: valida dados de crossing, status e calculos de compra.
 - `tests/Unit/Helpers/PortfolioHelperTest.php`: valida calculos e formatacao do helper de crossing.
 
+## Subscription Limits (V7)
+
+- `tests/Feature/Subscription/SubscriptionLimitsTest.php`: valida assinatura gratuita automatica, limites do plano free e acesso limitado ao crossing.
+
 ## Health
 
 - `tests/Feature/HealthCheckTest.php`: valida `GET /api/health` com resposta de sucesso.

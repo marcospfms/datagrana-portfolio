@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\Auth\GoogleAuthService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -37,6 +38,8 @@ class AuthController extends BaseController
             );
         }
 
+        app(SubscriptionLimitService::class)->ensureUserHasSubscription($user);
+
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -64,6 +67,8 @@ class AuthController extends BaseController
                 403
             );
         }
+
+        app(SubscriptionLimitService::class)->ensureUserHasSubscription($user);
 
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;

@@ -7,7 +7,18 @@ use App\Http\Controllers\Api\CompositionController;
 use App\Http\Controllers\Api\ConsolidatedController;
 use App\Http\Controllers\Api\ConsolidatedTransactionController;
 use App\Http\Controllers\Api\PortfolioController;
+use App\Http\Controllers\Api\RevenueCatWebhookController;
+use App\Http\Controllers\Api\SubscriptionPlanController;
+use App\Http\Controllers\Api\UserSubscriptionController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhooks/revenuecat', [RevenueCatWebhookController::class, 'handle'])
+    ->name('webhooks.revenuecat');
 
 /*
 |--------------------------------------------------------------------------
@@ -35,8 +46,15 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
+    Route::get('/subscription-plans/{plan}', [SubscriptionPlanController::class, 'show'])->name('subscription-plans.show');
+    Route::get('/subscription/current', [UserSubscriptionController::class, 'current'])->name('subscription.current');
+    Route::get('/subscription/history', [UserSubscriptionController::class, 'history'])->name('subscription.history');
+
     Route::get('/banks', [AccountController::class, 'banks'])->name('banks.index');
-    Route::apiResource('accounts', AccountController::class);
+    Route::apiResource('accounts', AccountController::class)->except(['store']);
+    Route::middleware('subscription.limit:account')->post('/accounts', [AccountController::class, 'store'])
+        ->name('accounts.store');
 
     Route::prefix('companies')->name('companies.')->group(function () {
         Route::get('/categories', [AssetController::class, 'categories'])->name('categories');
@@ -49,17 +67,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/consolidated', [ConsolidatedController::class, 'index'])->name('consolidated.index');
     Route::get('/consolidated/{consolidated}', [ConsolidatedController::class, 'show'])->name('consolidated.show');
 
-    Route::post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
+    Route::middleware('subscription.limit:position')
+        ->post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
         ->name('consolidated.transactions.store');
     Route::put('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'update'])
         ->name('consolidated.transactions.update');
     Route::delete('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'destroy'])
         ->name('consolidated.transactions.destroy');
 
-    Route::apiResource('portfolios', PortfolioController::class);
+    Route::apiResource('portfolios', PortfolioController::class)->except(['store']);
+    Route::middleware('subscription.limit:portfolio')->post('/portfolios', [PortfolioController::class, 'store'])
+        ->name('portfolios.store');
     Route::get('/portfolios/{portfolio}/crossing', [PortfolioController::class, 'crossing'])
         ->name('portfolios.crossing');
-    Route::post('/portfolios/{portfolio}/compositions', [CompositionController::class, 'store'])
+    Route::middleware('subscription.limit:composition')
+        ->post('/portfolios/{portfolio}/compositions', [CompositionController::class, 'store'])
         ->name('compositions.store');
     Route::put('/compositions/batch', [CompositionController::class, 'updateBatch'])
         ->name('compositions.batch');
