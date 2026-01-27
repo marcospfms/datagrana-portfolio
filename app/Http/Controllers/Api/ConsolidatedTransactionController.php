@@ -145,8 +145,6 @@ class ConsolidatedTransactionController extends BaseController
     {
         $validated = $request->validated();
 
-        DB::beginTransaction();
-
         try {
             if ($type === 'company') {
                 $transaction = CompanyTransaction::with('consolidated.account')
@@ -155,6 +153,8 @@ class ConsolidatedTransactionController extends BaseController
                 if ($transaction->consolidated->account->user_id !== $request->user()->id) {
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
+
+                DB::beginTransaction();
 
                 $newData = [
                     'date' => $validated['date'],
@@ -182,6 +182,8 @@ class ConsolidatedTransactionController extends BaseController
             if ($transaction->consolidated->account->user_id !== $request->user()->id) {
                 return $this->sendError('Nao autorizado.', [], 403);
             }
+
+            DB::beginTransaction();
 
             $newData = [
                 'date' => $validated['date'],
@@ -216,8 +218,6 @@ class ConsolidatedTransactionController extends BaseController
 
     public function destroy(string $type, int $transactionId, ConsolidationService $consolidationService): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             if ($type === 'company') {
                 $transaction = CompanyTransaction::with('consolidated.account')
@@ -226,6 +226,8 @@ class ConsolidatedTransactionController extends BaseController
                 if ($transaction->consolidated->account->user_id !== auth()->id()) {
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
+
+                DB::beginTransaction();
 
                 $consolidationService->processDeleting($transaction);
 
@@ -240,6 +242,8 @@ class ConsolidatedTransactionController extends BaseController
             if ($transaction->consolidated->account->user_id !== auth()->id()) {
                 return $this->sendError('Nao autorizado.', [], 403);
             }
+
+            DB::beginTransaction();
 
             $consolidationService->processDeleting($transaction);
 

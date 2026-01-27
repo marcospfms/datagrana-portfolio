@@ -172,7 +172,7 @@ class PortfolioHelper
                 }
 
                 $idealPercentage = $history ? $history->percentage : 0;
-                $displayIdealPercentage = 0;
+                $displayIdealPercentage = $idealPercentage;
                 $toBuyQuantity = self::calculateToBuyQuantity(
                     $idealPercentage,
                     $portfolio->target_value,

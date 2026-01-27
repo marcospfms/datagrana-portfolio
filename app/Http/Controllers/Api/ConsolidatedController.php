@@ -116,10 +116,10 @@ class ConsolidatedController extends BaseController
             ]
         );
 
-        return $this->sendResponse([
-            'position' => new ConsolidatedResource($consolidated),
-            'transactions' => $paginated,
-        ]);
+        $payload = (new ConsolidatedResource($consolidated))->resolve();
+        $payload['transactions'] = $paginated;
+
+        return $this->sendResponse($payload);
     }
 
     public function summary(Request $request): JsonResponse

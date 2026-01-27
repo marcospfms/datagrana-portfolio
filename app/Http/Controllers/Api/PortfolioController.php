@@ -24,8 +24,7 @@ class PortfolioController extends BaseController
             })
             ->withCount('compositions')
             ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         return $this->sendResponse($portfolios);
     }
