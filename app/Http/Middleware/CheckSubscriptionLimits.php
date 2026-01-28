@@ -32,7 +32,18 @@ class CheckSubscriptionLimits
                 $this->limitService->ensureCanCreatePortfolio($user);
                 break;
             case 'composition':
-                $this->limitService->ensureCanAddComposition($user);
+                $portfolio = $request->route('portfolio');
+                $pending = count($request->input('compositions', []));
+
+                if (!$pending) {
+                    $pending = 1;
+                }
+
+                if ($portfolio && $portfolio->user_id === $user->id) {
+                    $this->limitService->ensureCanAddComposition($user, $portfolio, $pending);
+                } else {
+                    $this->limitService->ensureCanAddComposition($user, null, $pending);
+                }
                 break;
             case 'account':
                 $this->limitService->ensureCanCreateAccount($user);

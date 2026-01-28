@@ -16,6 +16,7 @@ class SubscriptionPlanResource extends JsonResource
             'price_monthly' => (string) $this->price_monthly,
             'limits' => $this->getLimitsArray(),
             'features' => $this->getFeaturesArray(),
+            'configs' => SubscriptionPlanConfigResource::collection($this->whenLoaded('configs')),
             'is_active' => $this->is_active,
             'display_order' => $this->display_order,
             'revenuecat_product_id' => $this->revenuecat_product_id,

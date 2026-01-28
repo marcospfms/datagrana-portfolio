@@ -11,6 +11,9 @@ return new class extends Migration
         Schema::create('subscription_plan_config', function (Blueprint $table) {
             $table->id();
             $table->foreignId('subscription_plan_id')->constrained('subscription_plans')->cascadeOnDelete();
+            $table->string('name', 100);
+            $table->string('slug', 100);
+            $table->boolean('status')->default(true);
             $table->string('config_key', 50);
             $table->integer('config_value')->nullable();
             $table->boolean('is_enabled')->default(false);

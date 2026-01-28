@@ -3,6 +3,9 @@
 namespace Tests\Feature\Subscription;
 
 use App\Models\Account;
+use App\Models\Composition;
+use App\Models\Portfolio;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\SubscriptionLimitService;
 use Tests\TestCase;
@@ -41,5 +44,25 @@ class SubscriptionLimitsTest extends TestCase
         $service = app(SubscriptionLimitService::class);
 
         $this->assertFalse($service->hasFullCrossingAccess($user));
+    }
+
+    public function test_composition_limits_apply_per_portfolio(): void
+    {
+        $user = User::factory()->create();
+        $service = app(SubscriptionLimitService::class);
+
+        $plan = SubscriptionPlan::where('slug', 'starter')->firstOrFail();
+        $service->createSubscriptionFromPlan($user, $plan);
+
+        $portfolioA = Portfolio::factory()->create(['user_id' => $user->id]);
+        $portfolioB = Portfolio::factory()->create(['user_id' => $user->id]);
+
+        Composition::factory()
+            ->count($plan->getLimit('max_compositions'))
+            ->forPortfolio($portfolioA)
+            ->create();
+
+        $this->assertFalse($service->canAddComposition($user, $portfolioA));
+        $this->assertTrue($service->canAddComposition($user, $portfolioB));
     }
 }

@@ -10,6 +10,49 @@ class SubscriptionPlanSeeder extends Seeder
 {
     public function run(): void
     {
+        $configMeta = [
+            'max_accounts' => [
+                'name' => 'accounts',
+                'slug' => 'Contas',
+                'status' => true,
+            ],
+            'max_positions' => [
+                'name' => 'positions',
+                'slug' => 'Posições ativas',
+                'status' => true,
+            ],
+            'max_portfolios' => [
+                'name' => 'portfolios',
+                'slug' => 'Carteiras',
+                'status' => true,
+            ],
+            'max_compositions' => [
+                'name' => 'compositions',
+                'slug' => 'Ativos por carteira',
+                'status' => true,
+            ],
+            'allow_full_crossing' => [
+                'name' => 'full_crossing',
+                'slug' => 'Comparação completa',
+                'status' => true,
+            ],
+            'allow_composition_history' => [
+                'name' => 'composition_history',
+                'slug' => 'Histórico de composição',
+                'status' => true,
+            ],
+            'allow_category_analysis' => [
+                'name' => 'category_analysis',
+                'slug' => 'Análise por categoria',
+                'status' => true,
+            ],
+            'allow_multi_portfolio_analysis' => [
+                'name' => 'multi_portfolio_analysis',
+                'slug' => 'Múltiplas carteiras',
+                'status' => true,
+            ],
+        ];
+
         $plans = [
             [
                 'name' => 'Gratuito',
@@ -35,7 +78,7 @@ class SubscriptionPlanSeeder extends Seeder
                 'name' => 'Investidor Iniciante',
                 'slug' => 'starter',
                 'description' => 'Para investidores começando a diversificar',
-                'price_monthly' => 19.90,
+                'price_monthly' => 9.90,
                 'is_active' => true,
                 'display_order' => 2,
                 'revenuecat_product_id' => 'datagrana_starter_monthly',
@@ -55,7 +98,7 @@ class SubscriptionPlanSeeder extends Seeder
                 'name' => 'Investidor Pro',
                 'slug' => 'pro',
                 'description' => 'Para investidores ativos com múltiplas estratégias',
-                'price_monthly' => 39.90,
+                'price_monthly' => 14.90,
                 'is_active' => true,
                 'display_order' => 3,
                 'revenuecat_product_id' => 'datagrana_pro_monthly',
@@ -75,7 +118,7 @@ class SubscriptionPlanSeeder extends Seeder
                 'name' => 'Premium',
                 'slug' => 'premium',
                 'description' => 'Recursos ilimitados para investidores profissionais',
-                'price_monthly' => 79.90,
+                'price_monthly' => 24.90,
                 'is_active' => true,
                 'display_order' => 4,
                 'revenuecat_product_id' => 'datagrana_premium_monthly',
@@ -104,9 +147,17 @@ class SubscriptionPlanSeeder extends Seeder
 
             foreach ($configs as $key => $value) {
                 $isLimit = str_starts_with($key, 'max_');
+                $meta = $configMeta[$key] ?? [
+                    'name' => $key,
+                    'slug' => $key,
+                    'status' => true,
+                ];
                 SubscriptionPlanConfig::updateOrCreate(
                     ['subscription_plan_id' => $plan->id, 'config_key' => $key],
                     [
+                        'name' => $meta['name'],
+                        'slug' => $meta['slug'],
+                        'status' => (bool) $meta['status'],
                         'config_value' => $isLimit ? $value : null,
                         'is_enabled' => $isLimit ? false : (bool) $value,
                     ]

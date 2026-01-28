@@ -7,6 +7,7 @@ use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserSubscription;
 use App\Models\UserSubscriptionUsage;
+use App\Models\Portfolio;
 
 class SubscriptionLimitService
 {
@@ -22,16 +23,24 @@ class SubscriptionLimitService
         return $usage->current_portfolios < $subscription->getLimit('max_portfolios');
     }
 
-    public function canAddComposition(User $user): bool
+    public function canAddComposition(User $user, ?Portfolio $portfolio = null, int $pending = 1): bool
     {
         $subscription = $this->getActiveSubscription($user);
-        $usage = $this->getOrCreateUsage($user, $subscription);
 
         if ($subscription->isUnlimited('max_compositions')) {
             return true;
         }
 
-        return $usage->current_compositions < $subscription->getLimit('max_compositions');
+        $limit = $subscription->getLimit('max_compositions');
+
+        if (!$portfolio) {
+            $usage = $this->getOrCreateUsage($user, $subscription);
+            return $usage->current_compositions + $pending <= $limit;
+        }
+
+        $currentCount = $portfolio->compositions()->count();
+
+        return $currentCount + $pending <= $limit;
     }
 
     public function canCreatePosition(User $user): bool
@@ -93,13 +102,13 @@ class SubscriptionLimitService
         }
     }
 
-    public function ensureCanAddComposition(User $user): void
+    public function ensureCanAddComposition(User $user, ?Portfolio $portfolio = null, int $pending = 1): void
     {
-        if (!$this->canAddComposition($user)) {
+        if (!$this->canAddComposition($user, $portfolio, $pending)) {
             $subscription = $this->getActiveSubscription($user);
             $limit = $subscription->getLimit('max_compositions');
             throw new SubscriptionLimitExceededException(
-                "Voce atingiu o limite de {$limit} composicoes do plano {$subscription->plan_name}. Faca upgrade para adicionar mais."
+                "Voce atingiu o limite de {$limit} composicoes por carteira no plano {$subscription->plan_name}. Faca upgrade para adicionar mais."
             );
         }
     }

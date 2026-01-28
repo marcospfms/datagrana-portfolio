@@ -11,6 +11,9 @@ class SubscriptionPlanConfig extends Model
 
     protected $fillable = [
         'subscription_plan_id',
+        'name',
+        'slug',
+        'status',
         'config_key',
         'config_value',
         'is_enabled',
@@ -22,6 +25,7 @@ class SubscriptionPlanConfig extends Model
             'subscription_plan_id' => 'integer',
             'config_value' => 'integer',
             'is_enabled' => 'boolean',
+            'status' => 'boolean',
         ];
     }
 
