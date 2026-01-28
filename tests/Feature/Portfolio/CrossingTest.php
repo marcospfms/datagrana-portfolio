@@ -75,6 +75,69 @@ class CrossingTest extends TestCase
         $this->assertEquals('positioned', $crossingItem['status']);
     }
 
+    public function test_masks_crossing_when_full_access_is_disabled(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $subscription = $auth['user']->activeSubscription()->first();
+        $subscription->update([
+            'features_snapshot' => array_merge($subscription->features_snapshot ?? [], [
+                'allow_full_crossing' => false,
+            ]),
+        ]);
+
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $category = CompanyCategory::factory()->create(['reference' => 'Acoes']);
+        $company = Company::factory()->create(['company_category_id' => $category->id]);
+        $ticker = CompanyTicker::factory()->create([
+            'company_id' => $company->id,
+            'code' => 'PETR4',
+            'last_price' => 35.00,
+        ]);
+
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create([
+            'target_value' => 10000.00,
+        ]);
+
+        Composition::factory()->forPortfolio($portfolio)->create([
+            'company_ticker_id' => $ticker->id,
+            'percentage' => 25.00,
+        ]);
+
+        Consolidated::factory()->create([
+            'account_id' => $account->id,
+            'company_ticker_id' => $ticker->id,
+            'quantity_current' => 50,
+            'average_purchase_price' => 30.00,
+            'total_purchased' => 1500.00,
+            'closed' => false,
+        ]);
+
+        $response = $this->getJson(
+            "/api/portfolios/{$portfolio->id}/crossing",
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200);
+
+        $crossingItem = $response->json('data.crossing.0');
+        $this->assertEquals('locked', $crossingItem['current_quantity']);
+        $this->assertEquals('locked', $crossingItem['to_buy_quantity']);
+        $this->assertEquals('locked', $crossingItem['to_buy_quantity_formatted']);
+        $this->assertEquals('locked', $crossingItem['profit']);
+        $this->assertEquals('locked', $crossingItem['profit_percentage']);
+
+        $summary = $response->json('data.summary');
+        $this->assertEquals('locked', $summary['resultValue']);
+        $this->assertEquals('locked', $summary['positionedAssets']);
+        $this->assertEquals('locked', $summary['notPositionedAssets']);
+        $this->assertEquals('locked', $summary['unwindAssets']);
+        $this->assertEquals('locked', $summary['avgProfitPercentage']);
+        $this->assertEquals('locked', $summary['profitableAssets']);
+        $this->assertEquals('locked', $summary['lossAssets']);
+        $this->assertEquals('locked', $summary['perfectlyPositioned']);
+        $this->assertEquals('locked', $summary['totalProfit']);
+    }
+
     public function test_calculates_to_buy_quantity_correctly(): void
     {
         $auth = $this->createAuthenticatedUser();

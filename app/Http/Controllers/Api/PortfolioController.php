@@ -132,11 +132,12 @@ class PortfolioController extends BaseController
     {
         $this->authorize('view', $portfolio);
 
-        $crossing = $crossingService->prepare($portfolio, $request->user());
+        $result = $crossingService->prepare($portfolio, $request->user());
 
         return $this->sendResponse([
             'portfolio' => new PortfolioResource($portfolio),
-            'crossing' => $crossing,
+            'crossing' => $result['crossing'] ?? [],
+            'summary' => $result['summary'] ?? [],
         ]);
     }
 

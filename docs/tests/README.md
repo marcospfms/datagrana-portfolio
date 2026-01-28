@@ -48,7 +48,7 @@ Este arquivo registra cada teste criado e seu objetivo.
 
 ## Crossing (V6)
 
-- `tests/Feature/Portfolio/CrossingTest.php`: valida dados de crossing, status e calculos de compra.
+- `tests/Feature/Portfolio/CrossingTest.php`: valida dados de crossing, status, calculos de compra e mascara de dados quando o plano nao permite crossing completo.
 - `tests/Unit/Helpers/PortfolioHelperTest.php`: valida calculos e formatacao do helper de crossing.
 
 ## Subscription Limits (V7)
