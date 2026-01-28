@@ -16,9 +16,20 @@ use Tests\TestCase;
 
 class CrossingTest extends TestCase
 {
+    private function enableFullCrossing(array $auth): void
+    {
+        $subscription = app(\App\Services\SubscriptionLimitService::class)
+            ->ensureUserHasSubscription($auth['user']);
+
+        $features = $subscription->features_snapshot ?? [];
+        $features['allow_full_crossing'] = true;
+        $subscription->update(['features_snapshot' => $features]);
+    }
+
     public function test_can_get_crossing_data(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
         $category = CompanyCategory::factory()->create(['reference' => 'Acoes']);
         $company = Company::factory()->create(['company_category_id' => $category->id]);
@@ -141,6 +152,7 @@ class CrossingTest extends TestCase
     public function test_calculates_to_buy_quantity_correctly(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
         $category = CompanyCategory::factory()->create();
         $company = Company::factory()->create(['company_category_id' => $category->id]);
@@ -180,6 +192,7 @@ class CrossingTest extends TestCase
     public function test_identifies_not_positioned_assets(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $category = CompanyCategory::factory()->create();
         $company = Company::factory()->create(['company_category_id' => $category->id]);
         $ticker = CompanyTicker::factory()->create(['company_id' => $company->id]);
@@ -204,6 +217,7 @@ class CrossingTest extends TestCase
     public function test_identifies_unwind_positions(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
         $category = CompanyCategory::factory()->create();
         $company = Company::factory()->create(['company_category_id' => $category->id]);
@@ -237,6 +251,7 @@ class CrossingTest extends TestCase
     public function test_returns_null_to_buy_when_no_price(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $category = CompanyCategory::factory()->create();
         $company = Company::factory()->create(['company_category_id' => $category->id]);
         $ticker = CompanyTicker::factory()->create([
@@ -264,6 +279,7 @@ class CrossingTest extends TestCase
     public function test_crossing_includes_treasures(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
         $treasureCategory = TreasureCategory::factory()->create(['reference' => 'Tesouro']);
         $treasure = Treasure::factory()->create(['treasure_category_id' => $treasureCategory->id]);

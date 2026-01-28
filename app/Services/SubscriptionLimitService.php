@@ -145,10 +145,10 @@ class SubscriptionLimitService
             return true;
         }
 
-        $allowedIds = $this->getAllowedIds(
-            Consolidated::forUser($user)->open(),
-            $subscription->getLimit('max_positions')
-        );
+        $query = Consolidated::forUser($user)->open();
+        $limit = $subscription->getLimit('max_positions');
+
+        $allowedIds = $this->getAllowedIds($query, $limit);
 
         return in_array($consolidated->id, $allowedIds, true);
     }
@@ -370,7 +370,8 @@ class SubscriptionLimitService
             return [];
         }
 
-        return $query->orderBy('created_at')
+        return $query->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->limit((int) $limit)
             ->pluck('id')
             ->all();

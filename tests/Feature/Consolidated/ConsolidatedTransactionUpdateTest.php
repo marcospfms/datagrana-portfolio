@@ -112,6 +112,7 @@ class ConsolidatedTransactionUpdateTest extends TestCase
             ->forAccount($account)
             ->sequence(fn ($sequence) => [
                 'created_at' => $baseDate->copy()->addDays($sequence->index),
+                'updated_at' => $baseDate->copy()->addDays($sequence->index),
             ])
             ->create([
                 'quantity_current' => 10,
@@ -120,8 +121,31 @@ class ConsolidatedTransactionUpdateTest extends TestCase
                 'closed' => false,
             ]);
 
-        $oldest = $consolidateds->first();
-        $newest = $consolidateds->last();
+        $allowedIds = Consolidated::forUser($auth['user'])
+            ->open()
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->limit(5)
+            ->pluck('id')
+            ->all();
+
+        $blockedIds = Consolidated::forUser($auth['user'])
+            ->open()
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->skip(5)
+            ->limit(1)
+            ->pluck('id')
+            ->all();
+
+        $this->assertNotEmpty($allowedIds);
+        $this->assertNotEmpty($blockedIds);
+
+        $oldest = $consolidateds->firstWhere('id', $allowedIds[0]);
+        $newest = $consolidateds->firstWhere('id', $blockedIds[0]);
+
+        $this->assertNotNull($oldest);
+        $this->assertNotNull($newest);
 
         $oldestTransaction = CompanyTransaction::factory()->create([
             'consolidated_id' => $oldest->id,

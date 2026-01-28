@@ -199,9 +199,9 @@ class ConsolidatedTransactionController extends BaseController
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
 
-                $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
-
                 DB::beginTransaction();
+
+                $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
 
                 $newData = [
                     'date' => $validated['date'],
@@ -230,9 +230,9 @@ class ConsolidatedTransactionController extends BaseController
                 return $this->sendError('Nao autorizado.', [], 403);
             }
 
-            $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
-
             DB::beginTransaction();
+
+            $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
 
             $newData = [
                 'date' => $validated['date'],
@@ -288,9 +288,9 @@ class ConsolidatedTransactionController extends BaseController
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
 
-                $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
-
                 DB::beginTransaction();
+
+                $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
 
                 $consolidationService->processDeleting($transaction);
 
@@ -306,9 +306,9 @@ class ConsolidatedTransactionController extends BaseController
                 return $this->sendError('Nao autorizado.', [], 403);
             }
 
-            $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
-
             DB::beginTransaction();
+
+            $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
 
             $consolidationService->processDeleting($transaction);
 
@@ -316,7 +316,9 @@ class ConsolidatedTransactionController extends BaseController
 
             return $this->sendResponse([], 'Transacao removida com sucesso.');
         } catch (SubscriptionLimitExceededException $exception) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
             throw $exception;
         } catch (\Throwable $exception) {
             DB::rollBack();

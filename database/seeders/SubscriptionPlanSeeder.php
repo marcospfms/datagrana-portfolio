@@ -55,8 +55,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'revenuecat_entitlement_id' => null,
                 'configs' => [
                     'max_portfolios' => 1,
-                    'max_compositions' => 10,
-                    'max_positions' => 10,
+                    'max_compositions' => 5,
+                    'max_positions' => 5,
                     'max_accounts' => 1,
                     'allow_full_crossing' => false,
                     'allow_composition_history' => false,
@@ -73,8 +73,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'revenuecat_entitlement_id' => 'starter',
                 'configs' => [
                     'max_portfolios' => 2,
-                    'max_compositions' => 25,
-                    'max_positions' => 25,
+                    'max_compositions' => 10,
+                    'max_positions' => 10,
                     'max_accounts' => 2,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
@@ -91,8 +91,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'revenuecat_entitlement_id' => 'pro',
                 'configs' => [
                     'max_portfolios' => 4,
-                    'max_compositions' => 50,
-                    'max_positions' => 50,
+                    'max_compositions' => 25,
+                    'max_positions' => 25,
                     'max_accounts' => 4,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
