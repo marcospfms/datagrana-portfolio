@@ -194,7 +194,7 @@ Convenção de Nomenclatura:
    - is_enabled: não usado (sempre FALSE)
 
 2. Features booleanas (prefixo "allow_"):
-   - config_key: 'allow_full_crossing', 'allow_category_analysis', etc
+   - config_key: 'allow_full_crossing'
    - config_value: não usado (sempre NULL)
    - is_enabled: TRUE ou FALSE
 
@@ -279,8 +279,8 @@ features_snapshot:
 {
   "allow_full_crossing": true,
   "allow_composition_history": true,
-  "allow_category_analysis": true,
-  "allow_multi_portfolio_analysis": false
+  "allow_full_crossing": true,
+  "allow_composition_history": true
 }
 */
 
@@ -364,8 +364,8 @@ INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_v
 -- Features
 (1, 'allow_full_crossing', NULL, FALSE),
 (1, 'allow_composition_history', NULL, FALSE),
-(1, 'allow_category_analysis', NULL, FALSE),
-(1, 'allow_multi_portfolio_analysis', NULL, FALSE);
+(1, 'allow_full_crossing', NULL, FALSE),
+(1, 'allow_composition_history', NULL, FALSE);
 
 -- Plano Investidor Iniciante (ID 2)
 INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_value, is_enabled) VALUES
@@ -377,8 +377,8 @@ INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_v
 -- Features
 (2, 'allow_full_crossing', NULL, TRUE),
 (2, 'allow_composition_history', NULL, TRUE),
-(2, 'allow_category_analysis', NULL, TRUE),
-(2, 'allow_multi_portfolio_analysis', NULL, FALSE);
+(2, 'allow_full_crossing', NULL, TRUE),
+(2, 'allow_composition_history', NULL, TRUE);
 
 -- Plano Investidor Pro (ID 3)
 INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_value, is_enabled) VALUES
@@ -390,8 +390,8 @@ INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_v
 -- Features
 (3, 'allow_full_crossing', NULL, TRUE),
 (3, 'allow_composition_history', NULL, TRUE),
-(3, 'allow_category_analysis', NULL, TRUE),
-(3, 'allow_multi_portfolio_analysis', NULL, TRUE);
+(3, 'allow_full_crossing', NULL, TRUE),
+(3, 'allow_composition_history', NULL, TRUE);
 
 -- Plano Premium (ID 4) - Limites ilimitados (NULL)
 INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_value, is_enabled) VALUES
@@ -403,8 +403,8 @@ INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_v
 -- Features (todas habilitadas)
 (4, 'allow_full_crossing', NULL, TRUE),
 (4, 'allow_composition_history', NULL, TRUE),
-(4, 'allow_category_analysis', NULL, TRUE),
-(4, 'allow_multi_portfolio_analysis', NULL, TRUE);
+(4, 'allow_full_crossing', NULL, TRUE),
+(4, 'allow_composition_history', NULL, TRUE);
 ```
 
 **Chaves de Configuração Disponíveis:**
@@ -418,8 +418,6 @@ INSERT INTO subscription_plan_config (subscription_plan_id, config_key, config_v
 **Features (prefixo `allow_`):**
 - `allow_full_crossing` - Acesso completo à tela de crossing (mostra profit/loss)
 - `allow_composition_history` - Histórico de composições deletadas
-- `allow_category_analysis` - Análise avançada por categoria
-- `allow_multi_portfolio_analysis` - Análise comparativa de múltiplos portfólios
 
 **Para adicionar novos limites/features no futuro:**
 ```sql
@@ -671,8 +669,6 @@ export type SubscriptionLimits = {
 export type SubscriptionFeatures = {
   allow_full_crossing: boolean;
   allow_composition_history: boolean;
-  allow_category_analysis: boolean;
-  allow_multi_portfolio_analysis: boolean;
 };
 
 export type SubscriptionUsage = {
@@ -836,11 +832,9 @@ export const useSubscriptionFeatures = () => {
   };
 
   const canViewCategoryAnalysis = () => {
-    return subscription?.features.allow_category_analysis ?? false;
   };
 
   const canViewMultiPortfolioAnalysis = () => {
-    return subscription?.features.allow_multi_portfolio_analysis ?? false;
   };
 
   return {

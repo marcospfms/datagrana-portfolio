@@ -41,16 +41,6 @@ class SubscriptionPlanSeeder extends Seeder
                 'slug' => 'Histórico de composição',
                 'status' => true,
             ],
-            'allow_category_analysis' => [
-                'name' => 'category_analysis',
-                'slug' => 'Análise por categoria',
-                'status' => true,
-            ],
-            'allow_multi_portfolio_analysis' => [
-                'name' => 'multi_portfolio_analysis',
-                'slug' => 'Múltiplas carteiras',
-                'status' => true,
-            ],
         ];
 
         $plans = [
@@ -70,8 +60,6 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 1,
                     'allow_full_crossing' => false,
                     'allow_composition_history' => false,
-                    'allow_category_analysis' => false,
-                    'allow_multi_portfolio_analysis' => false,
                 ],
             ],
             [
@@ -90,8 +78,6 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 2,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
-                    'allow_category_analysis' => true,
-                    'allow_multi_portfolio_analysis' => false,
                 ],
             ],
             [
@@ -110,8 +96,6 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 4,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
-                    'allow_category_analysis' => true,
-                    'allow_multi_portfolio_analysis' => true,
                 ],
             ],
             [
@@ -130,8 +114,6 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => null,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
-                    'allow_category_analysis' => true,
-                    'allow_multi_portfolio_analysis' => true,
                 ],
             ],
         ];

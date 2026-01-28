@@ -165,18 +165,6 @@ class SubscriptionLimitService
         return $subscription->hasFeature('allow_composition_history');
     }
 
-    public function canViewCategoryAnalysis(User $user): bool
-    {
-        $subscription = $this->getActiveSubscription($user);
-        return $subscription->hasFeature('allow_category_analysis');
-    }
-
-    public function canViewMultiPortfolioAnalysis(User $user): bool
-    {
-        $subscription = $this->getActiveSubscription($user);
-        return $subscription->hasFeature('allow_multi_portfolio_analysis');
-    }
-
     public function ensureCanCreatePortfolio(User $user): void
     {
         if (!$this->canCreatePortfolio($user)) {
