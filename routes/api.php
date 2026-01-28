@@ -67,8 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/consolidated', [ConsolidatedController::class, 'index'])->name('consolidated.index');
     Route::get('/consolidated/{consolidated}', [ConsolidatedController::class, 'show'])->name('consolidated.show');
 
-    Route::middleware('subscription.limit:position')
-        ->post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
+    Route::post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
         ->name('consolidated.transactions.store');
     Route::put('/consolidated/transactions/{type}/{transactionId}', [ConsolidatedTransactionController::class, 'update'])
         ->name('consolidated.transactions.update');

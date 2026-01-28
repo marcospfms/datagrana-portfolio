@@ -9,6 +9,7 @@ use App\Http\Resources\CompositionResource;
 use App\Models\Composition;
 use App\Models\CompositionHistory;
 use App\Models\Portfolio;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,9 +50,14 @@ class CompositionController extends BaseController
         );
     }
 
-    public function update(UpdateCompositionRequest $request, Composition $composition): JsonResponse
+    public function update(
+        UpdateCompositionRequest $request,
+        Composition $composition,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $this->authorize('update', $composition->portfolio);
+        $limitService->ensureCanEditComposition($request->user(), $composition);
 
         $composition->update([
             'percentage' => $request->percentage,
@@ -65,13 +71,17 @@ class CompositionController extends BaseController
         );
     }
 
-    public function updateBatch(UpdateCompositionBatchRequest $request): JsonResponse
+    public function updateBatch(
+        UpdateCompositionBatchRequest $request,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $updated = [];
 
         foreach ($request->validated()['compositions'] as $compositionData) {
             $composition = Composition::findOrFail($compositionData['id']);
             $this->authorize('update', $composition->portfolio);
+            $limitService->ensureCanEditComposition($request->user(), $composition);
 
             $composition->update([
                 'percentage' => $compositionData['percentage'],
@@ -93,9 +103,14 @@ class CompositionController extends BaseController
         );
     }
 
-    public function destroy(Request $request, Composition $composition): JsonResponse
+    public function destroy(
+        Request $request,
+        Composition $composition,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $this->authorize('update', $composition->portfolio);
+        $limitService->ensureCanEditComposition($request->user(), $composition);
 
         $validated = $request->validate([
             'save_to_history' => ['boolean'],

@@ -10,6 +10,8 @@ class CompositionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $type = $this->treasure_id ? 'treasure' : 'company';
+        $allowedIds = $request->attributes->get('allowed_composition_ids');
+        $isLocked = is_array($allowedIds) ? !in_array($this->id, $allowedIds, true) : false;
 
         return [
             'id' => $this->id,
@@ -18,6 +20,7 @@ class CompositionResource extends JsonResource
             'company_ticker_id' => $this->company_ticker_id,
             'type' => $type,
             'percentage' => (string) $this->percentage,
+            'is_locked' => $isLocked,
             'treasure' => new TreasureResource($this->whenLoaded('treasure')),
             'company_ticker' => new CompanyTickerResource($this->whenLoaded('companyTicker')),
             'created_at' => $this->created_at?->toISOString(),

@@ -4,6 +4,7 @@ namespace Tests\Feature\Account;
 
 use App\Models\Account;
 use App\Models\Bank;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class AccountUpdateTest extends TestCase
@@ -83,5 +84,35 @@ class AccountUpdateTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['account']);
+    }
+
+    public function test_cannot_update_account_outside_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $baseDate = Carbon::now()->subDays(5);
+
+        $accounts = Account::factory()
+            ->count(2)
+            ->state(['user_id' => $auth['user']->id])
+            ->sequence(fn ($sequence) => [
+                'created_at' => $baseDate->copy()->addDays($sequence->index),
+            ])
+            ->create();
+
+        $oldest = $accounts->first();
+        $newest = $accounts->last();
+
+        $blockedResponse = $this->putJson("/api/accounts/{$newest->id}", [
+            'nickname' => 'Bloqueada',
+        ], $this->authHeaders($auth['token']));
+
+        $blockedResponse->assertStatus(403);
+
+        $allowedResponse = $this->putJson("/api/accounts/{$oldest->id}", [
+            'nickname' => 'Permitida',
+        ], $this->authHeaders($auth['token']));
+
+        $allowedResponse->assertStatus(200)
+            ->assertJsonPath('data.nickname', 'Permitida');
     }
 }

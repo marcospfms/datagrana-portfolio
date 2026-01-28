@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\InsufficientAssetException;
+use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Requests\Consolidated\StoreTransactionRequest;
 use App\Http\Requests\Consolidated\UpdateTransactionRequest;
 use App\Http\Resources\CompanyTransactionResource;
@@ -10,15 +11,21 @@ use App\Http\Resources\TreasureTransactionResource;
 use App\Models\Account;
 use App\Models\CompanyTicker;
 use App\Models\CompanyTransaction;
+use App\Models\Consolidated;
 use App\Models\Treasure;
 use App\Models\TreasureTransaction;
 use App\Services\Consolidated\ConsolidationService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class ConsolidatedTransactionController extends BaseController
 {
-    public function store(StoreTransactionRequest $request, ConsolidationService $consolidationService): JsonResponse
+    public function store(
+        StoreTransactionRequest $request,
+        ConsolidationService $consolidationService,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $validated = $request->validated();
 
@@ -34,6 +41,7 @@ class ConsolidatedTransactionController extends BaseController
         $errors = [];
         $createdCompanyTransactions = [];
         $createdTreasureTransactions = [];
+        $pendingPositions = 0;
 
         DB::beginTransaction();
 
@@ -41,6 +49,18 @@ class ConsolidatedTransactionController extends BaseController
             foreach ($sortedTransactions as $index => $transactionData) {
                 try {
                     if ($transactionData['type'] === 'company') {
+                        $existingConsolidated = Consolidated::where('account_id', $account->id)
+                            ->where('company_ticker_id', $transactionData['company_ticker_id'])
+                            ->whereNull('treasure_id')
+                            ->first();
+
+                        if ($existingConsolidated) {
+                            $limitService->ensureCanEditPosition($request->user(), $existingConsolidated);
+                        } else {
+                            $pendingPositions += 1;
+                            $limitService->ensureCanCreatePosition($request->user(), $pendingPositions);
+                        }
+
                         $consolidated = $consolidationService->getOrCreateConsolidated(
                             $account->id,
                             $transactionData['company_ticker_id'],
@@ -75,6 +95,18 @@ class ConsolidatedTransactionController extends BaseController
                         $consolidationService->processCreating($transaction, $consolidated, $index, $assetInfo);
                         $createdCompanyTransactions[] = $transaction;
                     } else {
+                        $existingConsolidated = Consolidated::where('account_id', $account->id)
+                            ->where('treasure_id', $transactionData['treasure_id'])
+                            ->whereNull('company_ticker_id')
+                            ->first();
+
+                        if ($existingConsolidated) {
+                            $limitService->ensureCanEditPosition($request->user(), $existingConsolidated);
+                        } else {
+                            $pendingPositions += 1;
+                            $limitService->ensureCanCreatePosition($request->user(), $pendingPositions);
+                        }
+
                         $consolidated = $consolidationService->getOrCreateConsolidated(
                             $account->id,
                             null,
@@ -130,8 +162,15 @@ class ConsolidatedTransactionController extends BaseController
                 'company_transactions' => CompanyTransactionResource::collection($createdCompanyTransactions),
                 'treasure_transactions' => TreasureTransactionResource::collection($createdTreasureTransactions),
             ], 'Transacoes criadas com sucesso.');
+        } catch (SubscriptionLimitExceededException $exception) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            throw $exception;
         } catch (\Throwable $exception) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return $this->sendError(
                 'Erro ao salvar as transacoes: ' . $exception->getMessage(),
@@ -141,7 +180,13 @@ class ConsolidatedTransactionController extends BaseController
         }
     }
 
-    public function update(UpdateTransactionRequest $request, string $type, int $transactionId, ConsolidationService $consolidationService): JsonResponse
+    public function update(
+        UpdateTransactionRequest $request,
+        string $type,
+        int $transactionId,
+        ConsolidationService $consolidationService,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $validated = $request->validated();
 
@@ -153,6 +198,8 @@ class ConsolidatedTransactionController extends BaseController
                 if ($transaction->consolidated->account->user_id !== $request->user()->id) {
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
+
+                $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
 
                 DB::beginTransaction();
 
@@ -183,6 +230,8 @@ class ConsolidatedTransactionController extends BaseController
                 return $this->sendError('Nao autorizado.', [], 403);
             }
 
+            $limitService->ensureCanEditPosition($request->user(), $transaction->consolidated);
+
             DB::beginTransaction();
 
             $newData = [
@@ -205,8 +254,15 @@ class ConsolidatedTransactionController extends BaseController
                 new TreasureTransactionResource($transaction->load('consolidated')),
                 'Transacao atualizada com sucesso.'
             );
+        } catch (SubscriptionLimitExceededException $exception) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            throw $exception;
         } catch (\Throwable $exception) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
             return $this->sendError(
                 'Erro ao atualizar a transacao: ' . $exception->getMessage(),
@@ -216,7 +272,12 @@ class ConsolidatedTransactionController extends BaseController
         }
     }
 
-    public function destroy(string $type, int $transactionId, ConsolidationService $consolidationService): JsonResponse
+    public function destroy(
+        string $type,
+        int $transactionId,
+        ConsolidationService $consolidationService,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         try {
             if ($type === 'company') {
@@ -226,6 +287,8 @@ class ConsolidatedTransactionController extends BaseController
                 if ($transaction->consolidated->account->user_id !== auth()->id()) {
                     return $this->sendError('Nao autorizado.', [], 403);
                 }
+
+                $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
 
                 DB::beginTransaction();
 
@@ -243,6 +306,8 @@ class ConsolidatedTransactionController extends BaseController
                 return $this->sendError('Nao autorizado.', [], 403);
             }
 
+            $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
+
             DB::beginTransaction();
 
             $consolidationService->processDeleting($transaction);
@@ -250,6 +315,9 @@ class ConsolidatedTransactionController extends BaseController
             DB::commit();
 
             return $this->sendResponse([], 'Transacao removida com sucesso.');
+        } catch (SubscriptionLimitExceededException $exception) {
+            DB::rollBack();
+            throw $exception;
         } catch (\Throwable $exception) {
             DB::rollBack();
 

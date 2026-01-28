@@ -43,6 +43,11 @@ Assinatura do Usuário (User Subscription)
 - ❌ Sem histórico de composições deletadas
 - ❌ Sem análise avançada por categoria
 
+> **Regra de downgrade (quando excede limites):**
+> - Itens acima do limite **não são deletados**, mas ficam **bloqueados para edição/exclusão**.
+> - Sempre permanecem editáveis os **mais antigos** (ordenados por `created_at`).
+> - Aplica-se a: contas, carteiras, composições (por carteira) e posições ativas.
+
 ### 2. Plano Investidor Iniciante (Starter)
 **Público:** Investidores começando a diversificar
 **Preço:** R$ 19,90/mês
@@ -87,6 +92,38 @@ Assinatura do Usuário (User Subscription)
 - ✅ Análise avançada por categoria
 - ✅ Análise comparativa multi-portfólio
 - ✅ Prioridade no suporte
+
+---
+
+## 🔒 Regra de Bloqueio por Limite (Downgrade)
+
+Quando o usuário reduz o plano e passa a exceder limites:
+
+- **Não removemos dados** automaticamente.
+- **Bloqueamos edição/remoção** de itens fora do limite.
+- **Critério:** somente os **N mais antigos** (`created_at` asc) permanecem editáveis.
+- **Escopos:**
+  - **Contas:** limite global por usuário.
+  - **Carteiras:** limite global por usuário.
+  - **Composições:** limite **por carteira**.
+  - **Posições ativas:** limite global por usuário.
+
+### Validação no Backend (obrigatória)
+
+Todas as operações de banco devem validar:
+
+- Update/Destroy em contas, carteiras e composições.
+- Transações que alterem posições ativas (criar/editar/excluir transação).
+- Se a posição já existe, validar se ela está entre as **mais antigas**.
+- Se a posição é nova, validar criação com limite.
+
+### Fonte de verdade dos limites (backend)
+
+- **Sempre calcular limites e bloqueios no backend** (ex.: `is_locked`).
+- O frontend **não deve** recomputar regras de limite/ordenação localmente.
+- Recursos/listas devem **expor campos calculados** para consumo direto no app:
+  - `is_locked` em contas, carteiras, composições e posições.
+- Objetivo: evitar inconsistência, delays e bypass por engenharia reversa.
 
 ---
 

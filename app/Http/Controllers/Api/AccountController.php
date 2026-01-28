@@ -8,6 +8,7 @@ use App\Http\Resources\AccountResource;
 use App\Http\Resources\BankResource;
 use App\Models\Account;
 use App\Models\Bank;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -62,9 +63,14 @@ class AccountController extends BaseController
         );
     }
 
-    public function update(UpdateAccountRequest $request, Account $account): JsonResponse
+    public function update(
+        UpdateAccountRequest $request,
+        Account $account,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $this->authorize('update', $account);
+        $limitService->ensureCanEditAccount($request->user(), $account);
 
         if ($request->boolean('default')) {
             $request->user()->accounts()
@@ -80,9 +86,10 @@ class AccountController extends BaseController
         );
     }
 
-    public function destroy(Account $account): JsonResponse
+    public function destroy(Account $account, SubscriptionLimitService $limitService): JsonResponse
     {
         $this->authorize('delete', $account);
+        $limitService->ensureCanEditAccount(auth()->user(), $account);
 
         if ($account->hasActivePositions()) {
             return $this->sendError(

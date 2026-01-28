@@ -7,7 +7,11 @@ use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserSubscription;
 use App\Models\UserSubscriptionUsage;
+use App\Models\Account;
+use App\Models\Composition;
+use App\Models\Consolidated;
 use App\Models\Portfolio;
+use Illuminate\Database\Eloquent\Builder;
 
 class SubscriptionLimitService
 {
@@ -43,7 +47,7 @@ class SubscriptionLimitService
         return $currentCount + $pending <= $limit;
     }
 
-    public function canCreatePosition(User $user): bool
+    public function canCreatePosition(User $user, int $pending = 1): bool
     {
         $subscription = $this->getActiveSubscription($user);
         $usage = $this->getOrCreateUsage($user, $subscription);
@@ -52,7 +56,7 @@ class SubscriptionLimitService
             return true;
         }
 
-        return $usage->current_positions < $subscription->getLimit('max_positions');
+        return $usage->current_positions + $pending <= $subscription->getLimit('max_positions');
     }
 
     public function canCreateAccount(User $user): bool
@@ -65,6 +69,88 @@ class SubscriptionLimitService
         }
 
         return $usage->current_accounts < $subscription->getLimit('max_accounts');
+    }
+
+    public function canEditAccount(User $user, Account $account): bool
+    {
+        if ($account->user_id !== $user->id) {
+            return false;
+        }
+
+        $subscription = $this->getActiveSubscription($user);
+
+        if ($subscription->isUnlimited('max_accounts')) {
+            return true;
+        }
+
+        $allowedIds = $this->getAllowedIds(
+            Account::where('user_id', $user->id),
+            $subscription->getLimit('max_accounts')
+        );
+
+        return in_array($account->id, $allowedIds, true);
+    }
+
+    public function canEditPortfolio(User $user, Portfolio $portfolio): bool
+    {
+        if ($portfolio->user_id !== $user->id) {
+            return false;
+        }
+
+        $subscription = $this->getActiveSubscription($user);
+
+        if ($subscription->isUnlimited('max_portfolios')) {
+            return true;
+        }
+
+        $allowedIds = $this->getAllowedIds(
+            Portfolio::where('user_id', $user->id),
+            $subscription->getLimit('max_portfolios')
+        );
+
+        return in_array($portfolio->id, $allowedIds, true);
+    }
+
+    public function canEditComposition(User $user, Composition $composition): bool
+    {
+        $portfolio = $composition->portfolio;
+
+        if (!$portfolio || $portfolio->user_id !== $user->id) {
+            return false;
+        }
+
+        $subscription = $this->getActiveSubscription($user);
+
+        if ($subscription->isUnlimited('max_compositions')) {
+            return true;
+        }
+
+        $allowedIds = $this->getAllowedIds(
+            Composition::where('portfolio_id', $portfolio->id),
+            $subscription->getLimit('max_compositions')
+        );
+
+        return in_array($composition->id, $allowedIds, true);
+    }
+
+    public function canEditPosition(User $user, Consolidated $consolidated): bool
+    {
+        if ($consolidated->closed) {
+            return true;
+        }
+
+        $subscription = $this->getActiveSubscription($user);
+
+        if ($subscription->isUnlimited('max_positions')) {
+            return true;
+        }
+
+        $allowedIds = $this->getAllowedIds(
+            Consolidated::forUser($user)->open(),
+            $subscription->getLimit('max_positions')
+        );
+
+        return in_array($consolidated->id, $allowedIds, true);
     }
 
     public function hasFullCrossingAccess(User $user): bool
@@ -113,9 +199,9 @@ class SubscriptionLimitService
         }
     }
 
-    public function ensureCanCreatePosition(User $user): void
+    public function ensureCanCreatePosition(User $user, int $pending = 1): void
     {
-        if (!$this->canCreatePosition($user)) {
+        if (!$this->canCreatePosition($user, $pending)) {
             $subscription = $this->getActiveSubscription($user);
             $limit = $subscription->getLimit('max_positions');
             throw new SubscriptionLimitExceededException(
@@ -131,6 +217,50 @@ class SubscriptionLimitService
             $limit = $subscription->getLimit('max_accounts');
             throw new SubscriptionLimitExceededException(
                 "Voce atingiu o limite de {$limit} contas do plano {$subscription->plan_name}. Faca upgrade para criar mais."
+            );
+        }
+    }
+
+    public function ensureCanEditAccount(User $user, Account $account): void
+    {
+        if (!$this->canEditAccount($user, $account)) {
+            $subscription = $this->getActiveSubscription($user);
+            $limit = $subscription->getLimit('max_accounts');
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} permite editar apenas as {$limit} contas mais antigas."
+            );
+        }
+    }
+
+    public function ensureCanEditPortfolio(User $user, Portfolio $portfolio): void
+    {
+        if (!$this->canEditPortfolio($user, $portfolio)) {
+            $subscription = $this->getActiveSubscription($user);
+            $limit = $subscription->getLimit('max_portfolios');
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} permite editar apenas as {$limit} carteiras mais antigas."
+            );
+        }
+    }
+
+    public function ensureCanEditComposition(User $user, Composition $composition): void
+    {
+        if (!$this->canEditComposition($user, $composition)) {
+            $subscription = $this->getActiveSubscription($user);
+            $limit = $subscription->getLimit('max_compositions');
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} permite editar apenas as {$limit} composicoes mais antigas da carteira."
+            );
+        }
+    }
+
+    public function ensureCanEditPosition(User $user, Consolidated $consolidated): void
+    {
+        if (!$this->canEditPosition($user, $consolidated)) {
+            $subscription = $this->getActiveSubscription($user);
+            $limit = $subscription->getLimit('max_positions');
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} permite editar apenas as {$limit} posicoes mais antigas."
             );
         }
     }
@@ -244,5 +374,17 @@ class SubscriptionLimitService
         }
 
         return $usage;
+    }
+
+    private function getAllowedIds(Builder $query, ?int $limit): array
+    {
+        if ($limit === null) {
+            return [];
+        }
+
+        return $query->orderBy('created_at')
+            ->limit((int) $limit)
+            ->pluck('id')
+            ->all();
     }
 }

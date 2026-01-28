@@ -5,6 +5,7 @@ namespace Tests\Feature\Consolidated;
 use App\Models\Account;
 use App\Models\CompanyTransaction;
 use App\Models\Consolidated;
+use Illuminate\Support\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -98,5 +99,68 @@ class ConsolidatedTransactionUpdateTest extends TestCase
         $this->assertEquals('20.00000000', (string) $consolidated->average_purchase_price);
         $this->assertEquals('0.00000000', (string) $consolidated->average_selling_price);
         $this->assertFalse($consolidated->closed);
+    }
+
+    public function test_cannot_update_transaction_outside_position_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $baseDate = Carbon::now()->subDays(30);
+
+        $consolidateds = Consolidated::factory()
+            ->count(11)
+            ->forAccount($account)
+            ->sequence(fn ($sequence) => [
+                'created_at' => $baseDate->copy()->addDays($sequence->index),
+            ])
+            ->create([
+                'quantity_current' => 10,
+                'quantity_purchased' => 10,
+                'total_purchased' => 100,
+            ]);
+
+        $oldest = $consolidateds->first();
+        $newest = $consolidateds->last();
+
+        $oldestTransaction = CompanyTransaction::factory()->create([
+            'consolidated_id' => $oldest->id,
+            'operation' => 'C',
+            'quantity' => 10,
+            'price' => 10,
+            'total_value' => 100,
+        ]);
+
+        $newestTransaction = CompanyTransaction::factory()->create([
+            'consolidated_id' => $newest->id,
+            'operation' => 'C',
+            'quantity' => 10,
+            'price' => 10,
+            'total_value' => 100,
+        ]);
+
+        $blockedResponse = $this->putJson("/api/consolidated/transactions/company/{$newestTransaction->id}", [
+            'account_id' => $account->id,
+            'type' => 'company',
+            'date' => now()->toDateTimeString(),
+            'operation' => 'buy',
+            'quantity' => 5,
+            'price' => 10,
+            'company_ticker_id' => $newest->company_ticker_id,
+        ], $this->authHeaders($auth['token']));
+
+        $blockedResponse->assertStatus(403);
+
+        $allowedResponse = $this->putJson("/api/consolidated/transactions/company/{$oldestTransaction->id}", [
+            'account_id' => $account->id,
+            'type' => 'company',
+            'date' => now()->toDateTimeString(),
+            'operation' => 'buy',
+            'quantity' => 5,
+            'price' => 10,
+            'company_ticker_id' => $oldest->company_ticker_id,
+        ], $this->authHeaders($auth['token']));
+
+        $allowedResponse->assertStatus(200)
+            ->assertJson(['success' => true]);
     }
 }

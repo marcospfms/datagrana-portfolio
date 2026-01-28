@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\ConsolidatedResource;
 use App\Models\Consolidated;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ConsolidatedController extends BaseController
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
     {
         $request->validate([
             'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
@@ -19,6 +20,20 @@ class ConsolidatedController extends BaseController
 
         $accountIds = $request->user()->accounts()->pluck('id');
         $perPage = 10;
+        $subscription = $limitService->ensureUserHasSubscription($request->user());
+        $maxPositions = $subscription->getLimit('max_positions');
+        $allowedIds = null;
+
+        if ($maxPositions !== null) {
+            $allowedIds = Consolidated::whereIn('account_id', $accountIds)
+                ->open()
+                ->orderBy('created_at')
+                ->limit($maxPositions)
+                ->pluck('id')
+                ->all();
+        }
+
+        $request->attributes->set('allowed_position_ids', $allowedIds);
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->when($request->account_id, fn ($query, $accountId) =>

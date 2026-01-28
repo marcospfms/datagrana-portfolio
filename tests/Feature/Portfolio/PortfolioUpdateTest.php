@@ -3,6 +3,7 @@
 namespace Tests\Feature\Portfolio;
 
 use App\Models\Portfolio;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PortfolioUpdateTest extends TestCase
@@ -52,5 +53,39 @@ class PortfolioUpdateTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'month_value', 'target_value']);
+    }
+
+    public function test_cannot_update_portfolio_outside_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $baseDate = Carbon::now()->subDays(10);
+
+        $portfolios = Portfolio::factory()
+            ->count(2)
+            ->forUser($auth['user'])
+            ->sequence(fn ($sequence) => [
+                'created_at' => $baseDate->copy()->addDays($sequence->index),
+            ])
+            ->create();
+
+        $oldest = $portfolios->first();
+        $newest = $portfolios->last();
+
+        $blockedResponse = $this->putJson("/api/portfolios/{$newest->id}", [
+            'name' => 'Bloqueada',
+            'month_value' => 1000,
+            'target_value' => 50000,
+        ], $this->authHeaders($auth['token']));
+
+        $blockedResponse->assertStatus(403);
+
+        $allowedResponse = $this->putJson("/api/portfolios/{$oldest->id}", [
+            'name' => 'Permitida',
+            'month_value' => 1200,
+            'target_value' => 60000,
+        ], $this->authHeaders($auth['token']));
+
+        $allowedResponse->assertStatus(200)
+            ->assertJsonPath('data.name', 'Permitida');
     }
 }

@@ -7,16 +7,31 @@ use App\Http\Requests\Portfolio\UpdatePortfolioRequest;
 use App\Http\Resources\PortfolioResource;
 use App\Models\Portfolio;
 use App\Services\Portfolio\CrossingService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PortfolioController extends BaseController
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
     {
         $request->validate([
             'name' => ['nullable', 'string', 'max:80'],
         ]);
+
+        $subscription = $limitService->ensureUserHasSubscription($request->user());
+        $maxPortfolios = $subscription->getLimit('max_portfolios');
+        $allowedIds = null;
+
+        if ($maxPortfolios !== null) {
+            $allowedIds = $request->user()->portfolios()
+                ->orderBy('created_at')
+                ->limit($maxPortfolios)
+                ->pluck('id')
+                ->all();
+        }
+
+        $request->attributes->set('allowed_portfolio_ids', $allowedIds);
 
         $portfolios = $request->user()->portfolios()
             ->when($request->filled('name'), function ($query) use ($request) {
@@ -26,7 +41,7 @@ class PortfolioController extends BaseController
             ->orderBy('name')
             ->get();
 
-        return $this->sendResponse($portfolios);
+        return $this->sendResponse(PortfolioResource::collection($portfolios));
     }
 
     public function store(StorePortfolioRequest $request): JsonResponse
@@ -39,9 +54,23 @@ class PortfolioController extends BaseController
         );
     }
 
-    public function show(Portfolio $portfolio): JsonResponse
+    public function show(Portfolio $portfolio, SubscriptionLimitService $limitService): JsonResponse
     {
         $this->authorize('view', $portfolio);
+
+        $subscription = $limitService->ensureUserHasSubscription(request()->user());
+        $maxCompositions = $subscription->getLimit('max_compositions');
+        $allowedCompositionIds = null;
+
+        if ($maxCompositions !== null) {
+            $allowedCompositionIds = $portfolio->compositions()
+                ->orderBy('created_at')
+                ->limit($maxCompositions)
+                ->pluck('id')
+                ->all();
+        }
+
+        request()->attributes->set('allowed_composition_ids', $allowedCompositionIds);
 
         $portfolio->load([
             'compositions.treasure.treasureCategory',
@@ -72,9 +101,14 @@ class PortfolioController extends BaseController
         return $this->sendResponse(new PortfolioResource($portfolio));
     }
 
-    public function update(UpdatePortfolioRequest $request, Portfolio $portfolio): JsonResponse
+    public function update(
+        UpdatePortfolioRequest $request,
+        Portfolio $portfolio,
+        SubscriptionLimitService $limitService
+    ): JsonResponse
     {
         $this->authorize('update', $portfolio);
+        $limitService->ensureCanEditPortfolio($request->user(), $portfolio);
 
         $portfolio->update($request->validated());
 
@@ -84,9 +118,10 @@ class PortfolioController extends BaseController
         );
     }
 
-    public function destroy(Portfolio $portfolio): JsonResponse
+    public function destroy(Portfolio $portfolio, SubscriptionLimitService $limitService): JsonResponse
     {
         $this->authorize('delete', $portfolio);
+        $limitService->ensureCanEditPortfolio(auth()->user(), $portfolio);
 
         $portfolio->delete();
 

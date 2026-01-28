@@ -7,6 +7,8 @@
 ## Status atual (Backend + App)
 
 - ✅ V1 Auth, V2 Core, V3 Companies (search), V4 Consolidated, V5 Portfolio e V6 Crossing implementados no backend.
+- ✅ V7 Subscription Limits implementado no backend (limites + regras de downgrade por `created_at`).
+- ✅ Regra: limites e bloqueios (ex.: `is_locked`) calculados no backend; frontend consome pronto.
 - ✅ App consumindo: auth, accounts, consolidated (lista, resumo, transacoes), portfolios/compositions, crossing.
 - 🔜 Evolucao pos-MVP (app): companies categories/popular/detail, update batch de composicoes, historico detalhado de composicoes.
 - Arquivos de referencia (app):
@@ -276,6 +278,17 @@ Fluxo alternativo (email/senha):
 - valor_atual = saldo_atual
 - a_comprar = (objetivo_ativo - valor_atual) / ultimo_preco
 - resultado = floor(a_comprar) se > 0, senao 0
+
+### 8.7 Regras de Limite (Assinatura)
+
+- Limites sao aplicados por funcionalidade (contas, carteiras, composicoes por carteira, posicoes ativas).
+- Em downgrade, itens **acima do limite nao sao removidos**, mas ficam **bloqueados para editar/excluir**.
+- Sempre permanecem editaveis os **N mais antigos** (ordenados por `created_at` asc).
+- Validacao obrigatoria no backend para:
+  - Update/Destroy de contas, carteiras e composicoes.
+  - Transacoes de posicao (criar/editar/excluir) considerando:
+    - Posicao existente: so editar se estiver entre as mais antigas.
+    - Posicao nova: validar limite antes de criar.
 
 ---
 

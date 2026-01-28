@@ -4,6 +4,7 @@ namespace Tests\Feature\Portfolio;
 
 use App\Models\Composition;
 use App\Models\Portfolio;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class CompositionUpdateTest extends TestCase
@@ -53,5 +54,36 @@ class CompositionUpdateTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['percentage']);
+    }
+
+    public function test_cannot_update_composition_outside_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create();
+
+        $baseDate = Carbon::now()->subDays(20);
+        $compositions = Composition::factory()
+            ->count(11)
+            ->forPortfolio($portfolio)
+            ->sequence(fn ($sequence) => [
+                'created_at' => $baseDate->copy()->addDays($sequence->index),
+            ])
+            ->create();
+
+        $oldest = $compositions->first();
+        $newest = $compositions->last();
+
+        $blockedResponse = $this->putJson("/api/compositions/{$newest->id}", [
+            'percentage' => 12.5,
+        ], $this->authHeaders($auth['token']));
+
+        $blockedResponse->assertStatus(403);
+
+        $allowedResponse = $this->putJson("/api/compositions/{$oldest->id}", [
+            'percentage' => 12.5,
+        ], $this->authHeaders($auth['token']));
+
+        $allowedResponse->assertStatus(200)
+            ->assertJsonPath('data.percentage', '12.50');
     }
 }

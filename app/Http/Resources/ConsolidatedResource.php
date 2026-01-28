@@ -9,6 +9,13 @@ class ConsolidatedResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $allowedIds = $request->attributes->get('allowed_position_ids');
+        $isLocked = false;
+
+        if (!$this->closed && is_array($allowedIds)) {
+            $isLocked = !in_array($this->id, $allowedIds, true);
+        }
+
         return [
             'id' => $this->id,
             'account_id' => $this->account_id,
@@ -26,6 +33,7 @@ class ConsolidatedResource extends JsonResource
             'net_balance' => (string) $this->net_balance,
             'profit' => (string) $this->profit,
             'profit_percentage' => (string) $this->profit_percentage,
+            'is_locked' => $isLocked,
             'account' => new AccountResource($this->whenLoaded('account')),
             'company_ticker' => new CompanyTickerResource($this->whenLoaded('companyTicker')),
             'company_transactions' => CompanyTransactionResource::collection(

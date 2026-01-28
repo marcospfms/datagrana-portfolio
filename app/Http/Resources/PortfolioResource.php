@@ -9,6 +9,9 @@ class PortfolioResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $allowedIds = $request->attributes->get('allowed_portfolio_ids');
+        $isLocked = is_array($allowedIds) ? !in_array($this->id, $allowedIds, true) : false;
+
         $byCategory = collect($this->total_percentage_by_category ?? [])
             ->map(function ($item) {
                 $type = $item->type ?? $item['type'] ?? null;
@@ -39,6 +42,7 @@ class PortfolioResource extends JsonResource
             'month_value' => (string) $this->month_value,
             'target_value' => (string) $this->target_value,
             'total_percentage' => (string) $this->total_percentage,
+            'is_locked' => $isLocked,
             'total_percentage_by_category' => $byCategory,
             'compositions_count' => $this->compositions_count ?? $this->compositions()->count(),
             'compositions' => CompositionResource::collection($this->whenLoaded('compositions')),
