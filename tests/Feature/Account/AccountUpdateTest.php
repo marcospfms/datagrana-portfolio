@@ -46,14 +46,17 @@ class AccountUpdateTest extends TestCase
     public function test_setting_default_removes_other_defaults(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $baseDate = Carbon::now()->subDays(2);
 
         $oldDefault = Account::factory()->create([
             'user_id' => $auth['user']->id,
             'default' => true,
+            'created_at' => $baseDate->copy()->addDay(),
         ]);
         $account = Account::factory()->create([
             'user_id' => $auth['user']->id,
             'default' => false,
+            'created_at' => $baseDate->copy(),
         ]);
 
         $response = $this->putJson("/api/accounts/{$account->id}", [

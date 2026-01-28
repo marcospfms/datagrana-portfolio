@@ -117,6 +117,7 @@ class ConsolidatedTransactionUpdateTest extends TestCase
                 'quantity_current' => 10,
                 'quantity_purchased' => 10,
                 'total_purchased' => 100,
+                'closed' => false,
             ]);
 
         $oldest = $consolidateds->first();

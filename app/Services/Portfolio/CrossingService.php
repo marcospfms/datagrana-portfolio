@@ -80,7 +80,7 @@ class CrossingService
         $crossing = PortfolioHelper::prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio);
         $summary = $this->buildSummary($crossing, $portfolio);
 
-        if (!app()->runningUnitTests() && !$this->limitService->hasFullCrossingAccess($user)) {
+        if (!$this->limitService->hasFullCrossingAccess($user)) {
             $crossing = $this->maskCrossingData($crossing);
             $summary = $this->maskCrossingSummary($summary);
         }
