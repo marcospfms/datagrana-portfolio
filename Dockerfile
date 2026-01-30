@@ -40,9 +40,12 @@ COPY . /var/www/html
 
 # Install dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-RUN npm ci \
-    && npm run build \
-    && rm -rf node_modules
+ARG VITE_WEB_APP_ENABLED=false
+RUN if [ "$VITE_WEB_APP_ENABLED" = "true" ]; then \
+      if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi; \
+      npm run build; \
+      rm -rf node_modules; \
+    fi
 
 # Create Laravel storage symlink at build time via Artisan (avoids needing `php artisan storage:link` on container start)
 RUN rm -rf public/storage \
