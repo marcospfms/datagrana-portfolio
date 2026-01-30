@@ -1,57 +1,62 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm
 
-# System deps
-RUN apk add --no-cache \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    git \
+    curl \
+    gnupg \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    zip \
+    unzip \
     nginx \
     supervisor \
-    bash \
-    curl \
-    icu-dev \
-    libzip-dev \
-    oniguruma-dev \
-    zlib-dev \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    git \
-    unzip
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        bcmath \
-        intl \
-        zip \
-        gd \
-        opcache
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache zip
 
-# Configure PHP-FPM
-RUN { \
-      echo "[global]"; \
-      echo "daemonize = no"; \
-    } > /usr/local/etc/php-fpm.d/zz-docker.conf
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy composer from official image
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install Node.js (needed to build Vite assets)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP dependencies
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+# Setup Nginx & Supervisor
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy application
-COPY . .
+# Copy application code
+COPY . /var/www/html
 
-# Copy configs
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
+# Install dependencies
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+RUN npm ci \
+    && npm run build \
+    && rm -rf node_modules
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R ug+rwx storage bootstrap/cache
+# Create Laravel storage symlink at build time via Artisan (avoids needing `php artisan storage:link` on container start)
+RUN rm -rf public/storage \
+    && APP_ENV=production APP_DEBUG=false APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan storage:link
 
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose port 80
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost/up || exit 1
+
+# Start Supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
