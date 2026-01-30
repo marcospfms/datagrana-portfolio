@@ -148,7 +148,7 @@ class RevenueCatWebhookService
             }
         }
 
-        if ($currentActive) {
+        if ($currentActive && $currentActive->plan_slug !== 'free') {
             $currentTime = $currentActive->paid_at ?? $currentActive->starts_at ?? $currentActive->created_at;
             $shouldCancel = !$currentTime || $eventTime->gte($currentTime);
 

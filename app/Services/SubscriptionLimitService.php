@@ -277,6 +277,24 @@ class SubscriptionLimitService
             ->with('configs')
             ->firstOrFail();
 
+        $existingFree = UserSubscription::where('user_id', $user->id)
+            ->where('plan_slug', 'free')
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($existingFree) {
+            $existingFree->update([
+                'status' => 'active',
+                'canceled_at' => null,
+                'ends_at' => null,
+                'renews_at' => null,
+            ]);
+
+            $this->getOrCreateUsage($user, $existingFree);
+
+            return $existingFree;
+        }
+
         $subscription = UserSubscription::create([
             'user_id' => $user->id,
             'subscription_plan_id' => $freePlan->id,
@@ -288,7 +306,7 @@ class SubscriptionLimitService
             'status' => 'active',
             'starts_at' => now(),
             'ends_at' => null,
-            'is_paid' => true,
+            'is_paid' => false,
         ]);
 
         $this->getOrCreateUsage($user, $subscription);
@@ -313,7 +331,7 @@ class SubscriptionLimitService
             'status' => 'active',
             'starts_at' => now(),
             'ends_at' => $isFree ? null : ($extraData['ends_at'] ?? null),
-            'is_paid' => $isFree ? true : false,
+            'is_paid' => $isFree ? false : true,
         ], $extraData);
 
         $subscription = UserSubscription::create($data);

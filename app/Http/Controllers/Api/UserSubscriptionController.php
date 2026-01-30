@@ -17,7 +17,14 @@ class UserSubscriptionController extends BaseController
     {
         $user = $request->user();
 
-        $subscription = $user->subscriptions()->active()->with('usage')->first();
+        $subscription = $user->subscriptions()
+            ->active()
+            ->with('usage')
+            ->orderByDesc('is_paid')
+            ->orderByDesc('price_monthly')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('created_at')
+            ->first();
 
         if (!$subscription) {
             $subscription = $this->limitService->createFreeSubscription($user);
