@@ -90,6 +90,10 @@ class RevenueCatWebhookService
         $store = data_get($event, 'store');
         $expiresAtMs = data_get($event, 'expiration_at_ms');
         $expiresDate = $expiresAtMs ? Carbon::createFromTimestampMs($expiresAtMs) : null;
+        $eventTimestampMs = data_get($event, 'event_timestamp_ms');
+        $eventTime = $eventTimestampMs ? Carbon::createFromTimestampMs($eventTimestampMs) : now();
+        $purchasedAtMs = data_get($event, 'purchased_at_ms');
+        $purchasedAt = $purchasedAtMs ? Carbon::createFromTimestampMs($purchasedAtMs) : now();
 
         $user = User::find($userId);
         if (!$user) {
@@ -104,6 +108,28 @@ class RevenueCatWebhookService
             throw new \Exception("Plan not found for product_id: {$productId}");
         }
 
+        $currentActive = $user->subscriptions()
+            ->active()
+            ->orderByDesc('paid_at')
+            ->orderByDesc('starts_at')
+            ->first();
+
+        if ($currentActive && $currentActive->revenuecat_original_transaction_id
+            && $currentActive->revenuecat_original_transaction_id !== $originalTransactionId) {
+            $currentTime = $currentActive->paid_at ?? $currentActive->starts_at ?? $currentActive->created_at;
+            if ($currentTime && $eventTime->lt($currentTime)) {
+                \Log::warning('RevenueCat: ignoring older purchase/renewal event', [
+                    'app_user_id' => $userId,
+                    'event_id' => data_get($event, 'id'),
+                    'event_type' => data_get($event, 'type'),
+                    'event_time' => $eventTime->toDateTimeString(),
+                    'current_subscription_id' => $currentActive->id,
+                    'current_subscription_time' => $currentTime->toDateTimeString(),
+                ]);
+                return;
+            }
+        }
+
         if ($originalTransactionId) {
             $existingByTransaction = UserSubscription::where('user_id', $user->id)
                 ->where('revenuecat_original_transaction_id', $originalTransactionId)
@@ -112,22 +138,27 @@ class RevenueCatWebhookService
             if ($existingByTransaction) {
                 $existingByTransaction->update([
                     'status' => 'active',
+                    'starts_at' => $purchasedAt,
                     'ends_at' => $expiresDate,
                     'renews_at' => $expiresDate,
-                    'paid_at' => now(),
+                    'paid_at' => $purchasedAt,
                     'payment_method' => $store,
                 ]);
                 return;
             }
         }
 
-        $existingSubscription = $user->subscriptions()->active()->first();
-        if ($existingSubscription) {
-            $existingSubscription->update([
-                'status' => 'canceled',
-                'canceled_at' => now(),
-                'ends_at' => now(),
-            ]);
+        if ($currentActive) {
+            $currentTime = $currentActive->paid_at ?? $currentActive->starts_at ?? $currentActive->created_at;
+            $shouldCancel = !$currentTime || $eventTime->gte($currentTime);
+
+            if ($shouldCancel) {
+                $currentActive->update([
+                    'status' => 'canceled',
+                    'canceled_at' => now(),
+                    'ends_at' => now(),
+                ]);
+            }
         }
 
         UserSubscription::create([
@@ -139,11 +170,11 @@ class RevenueCatWebhookService
             'limits_snapshot' => $plan->getLimitsArray(),
             'features_snapshot' => $plan->getFeaturesArray(),
             'status' => 'active',
-            'starts_at' => now(),
+            'starts_at' => $purchasedAt,
             'ends_at' => $expiresDate,
             'renews_at' => $expiresDate,
             'is_paid' => true,
-            'paid_at' => now(),
+            'paid_at' => $purchasedAt,
             'payment_method' => $store,
             'revenuecat_subscriber_id' => data_get($event, 'subscriber_id'),
             'revenuecat_original_transaction_id' => $originalTransactionId,
