@@ -41,6 +41,28 @@ Para o seu objetivo (separar **Sandbox** para não "enxergar"/misturar com **Pro
 - Acesso administrativo ao repositório GitHub do `datagrana-portfolio`.
 - **Domínio Ativo**: `datagrana.app` (acesso ao painel de DNS, ex: cPanel, Cloudflare, Registro.br, etc).
 
+### 1.0.1. Build Web (Vite) opcional
+
+Para manter o pipeline funcional mesmo sem a parte web ativa, o build de assets pode ser
+**desabilitado no CI**. A flag usada no workflow é:
+
+- `VITE_WEB_APP_ENABLED=false` (default no CI) → **pula** o `npm run build`
+- `VITE_WEB_APP_ENABLED=true` → habilita o build da web
+
+Isso **não precisa** existir no ambiente do Dokploy (runtime). É apenas para o build no CI.
+
+### 1.0.2. Cache de dependências (NPM + Composer)
+
+O pipeline usa cache para acelerar o CI:
+
+- **NPM**: `~/.npm` usando a hash do `package-lock.json`
+- **Composer**: `~/.composer/cache` usando a hash do `composer.lock`
+
+Para **desativar o cache** no CI, basta:
+
+- remover os steps `actions/cache` de NPM/Composer
+- (opcional) remover `cache` do `setup-node`
+
 ### 1.1. Estratégia de Tags de Imagem
 
 O GitHub Actions gera **automaticamente** dois tipos de tags para cada commit:

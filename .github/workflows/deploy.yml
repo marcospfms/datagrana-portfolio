@@ -10,6 +10,8 @@ jobs:
   tests:
     name: Run Tests
     runs-on: ubuntu-latest
+    env:
+      VITE_WEB_APP_ENABLED: 'false'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,7 +27,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+
+      - name: Cache NPM
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install Node Dependencies
         run: npm ci
@@ -40,6 +57,7 @@ jobs:
         run: php artisan key:generate
 
       - name: Build Assets
+        if: env.VITE_WEB_APP_ENABLED == 'true'
         run: npm run build
 
       - name: Execute Tests
