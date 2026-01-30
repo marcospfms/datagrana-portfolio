@@ -33,7 +33,7 @@ class UserSubscription extends Model
         'revenuecat_product_id',
         'revenuecat_entitlement_id',
         'revenuecat_store',
-        'revenuecat_raw_data',
+        'renewal_count',
         'cancellation_reason',
         'notes',
     ];
@@ -48,11 +48,11 @@ class UserSubscription extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'renews_at' => 'datetime',
-            'trial_ends_at' => 'datetime',
-            'canceled_at' => 'datetime',
-            'paid_at' => 'datetime',
-            'revenuecat_raw_data' => 'json',
-        ];
+        'trial_ends_at' => 'datetime',
+        'canceled_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'renewal_count' => 'integer',
+    ];
     }
 
     public function user(): BelongsTo

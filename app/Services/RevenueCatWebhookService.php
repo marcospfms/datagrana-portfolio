@@ -58,7 +58,7 @@ class RevenueCatWebhookService
         try {
             $eventType = data_get($payload, 'event.type');
 
-            match ($eventType) {
+            $subscription = match ($eventType) {
                 'INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE' => $this->handlePurchaseOrRenewal($payload),
                 'CANCELLATION' => $this->handleCancellation($payload),
                 'EXPIRATION' => $this->handleExpiration($payload),
@@ -69,6 +69,7 @@ class RevenueCatWebhookService
             $log->update([
                 'status' => 'processed',
                 'processed_at' => now(),
+                'user_subscription_id' => $subscription?->id,
             ]);
         } catch (\Exception $exception) {
             $log->update([
@@ -80,9 +81,10 @@ class RevenueCatWebhookService
         }
     }
 
-    private function handlePurchaseOrRenewal(array $payload): void
+    private function handlePurchaseOrRenewal(array $payload): ?UserSubscription
     {
         $event = $payload['event'] ?? [];
+        $eventType = data_get($event, 'type');
         $userId = data_get($event, 'app_user_id');
         $productId = data_get($event, 'product_id');
         $entitlementId = data_get($event, 'entitlement_identifiers.0');
@@ -126,7 +128,7 @@ class RevenueCatWebhookService
                     'current_subscription_id' => $currentActive->id,
                     'current_subscription_time' => $currentTime->toDateTimeString(),
                 ]);
-                return;
+                return null;
             }
         }
 
@@ -144,7 +146,10 @@ class RevenueCatWebhookService
                     'paid_at' => $purchasedAt,
                     'payment_method' => $store,
                 ]);
-                return;
+                if ($eventType === 'RENEWAL') {
+                    $existingByTransaction->increment('renewal_count');
+                }
+                return $existingByTransaction->fresh();
             }
         }
 
@@ -161,7 +166,7 @@ class RevenueCatWebhookService
             }
         }
 
-        UserSubscription::create([
+        $subscription = UserSubscription::create([
             'user_id' => $user->id,
             'subscription_plan_id' => $plan->id,
             'plan_name' => $plan->name,
@@ -181,11 +186,12 @@ class RevenueCatWebhookService
             'revenuecat_product_id' => $productId,
             'revenuecat_entitlement_id' => $entitlementId,
             'revenuecat_store' => $store,
-            'revenuecat_raw_data' => $payload,
+            'renewal_count' => $eventType === 'RENEWAL' ? 1 : 0,
         ]);
+        return $subscription;
     }
 
-    private function handleCancellation(array $payload): void
+    private function handleCancellation(array $payload): ?UserSubscription
     {
         $event = $payload['event'] ?? [];
         $userId = data_get($event, 'app_user_id');
@@ -197,7 +203,7 @@ class RevenueCatWebhookService
                 'event_id' => data_get($event, 'id'),
                 'event_type' => data_get($event, 'type'),
             ]);
-            return;
+            return null;
         }
 
         $subscription = UserSubscription::where('user_id', $userId)
@@ -205,14 +211,13 @@ class RevenueCatWebhookService
             ->first();
 
         if ($subscription) {
-            if ($subscription->plan_slug === 'free') {
-                return;
+            if ($subscription->plan_slug !== 'free') {
+                $subscription->update([
+                    'status' => 'canceled',
+                    'canceled_at' => now(),
+                ]);
             }
-            $subscription->update([
-                'status' => 'canceled',
-                'canceled_at' => now(),
-            ]);
-            return;
+            return $subscription;
         }
 
         \Log::warning('RevenueCat: cancellation without matching subscription', [
@@ -220,9 +225,10 @@ class RevenueCatWebhookService
             'original_transaction_id' => $originalTransactionId,
             'event_id' => data_get($event, 'id'),
         ]);
+        return null;
     }
 
-    private function handleExpiration(array $payload): void
+    private function handleExpiration(array $payload): ?UserSubscription
     {
         $event = $payload['event'] ?? [];
         $userId = data_get($event, 'app_user_id');
@@ -234,7 +240,7 @@ class RevenueCatWebhookService
                 'event_id' => data_get($event, 'id'),
                 'event_type' => data_get($event, 'type'),
             ]);
-            return;
+            return null;
         }
 
         $subscription = UserSubscription::where('user_id', $userId)
@@ -242,13 +248,12 @@ class RevenueCatWebhookService
             ->first();
 
         if ($subscription) {
-            if ($subscription->plan_slug === 'free') {
-                return;
+            if ($subscription->plan_slug !== 'free') {
+                $subscription->update([
+                    'status' => 'expired',
+                ]);
             }
-            $subscription->update([
-                'status' => 'expired',
-            ]);
-            return;
+            return $subscription;
         }
 
         \Log::warning('RevenueCat: expiration without matching subscription', [
@@ -256,13 +261,15 @@ class RevenueCatWebhookService
             'original_transaction_id' => $originalTransactionId,
             'event_id' => data_get($event, 'id'),
         ]);
+        return null;
     }
 
-    private function handleBillingIssue(array $payload): void
+    private function handleBillingIssue(array $payload): ?UserSubscription
     {
         $event = $payload['event'] ?? [];
         $userId = data_get($event, 'app_user_id');
 
         \Log::warning("RevenueCat: Billing issue for user {$userId}", $payload);
+        return null;
     }
 }

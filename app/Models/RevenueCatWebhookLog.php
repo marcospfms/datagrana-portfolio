@@ -17,6 +17,7 @@ class RevenueCatWebhookLog extends Model
         'entitlement_id',
         'store',
         'original_transaction_id',
+        'user_subscription_id',
         'payload',
         'status',
         'processed_at',
