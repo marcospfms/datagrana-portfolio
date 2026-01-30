@@ -317,7 +317,7 @@ const testimonials = [
                                     class="bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] rounded-[2.5rem] overflow-hidden">
                                     <!-- Screenshot Content -->
                                     <div
-                                        class="h-[600px] bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] p-5 relative overflow-hidden">
+                                        class="h-170 bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] p-5 relative overflow-hidden">
                                         <!-- Glows internos -->
                                         <div
                                             class="absolute top-0 right-0 w-32 h-32 bg-[#f7c873] opacity-20 blur-3xl rounded-full">
@@ -954,7 +954,7 @@ const testimonials = [
 
                         <ul class="space-y-3 mb-8">
                             <li v-for="feature in plan.features" :key="feature" class="flex items-start gap-2">
-                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0"
+                                <svg class="w-5 h-5 mt-0.5 shrink-0"
                                     :class="plan.highlight ? 'text-white' : 'text-[#17a2b8]'" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
@@ -965,7 +965,7 @@ const testimonials = [
                             </li>
                             <li v-for="feature in plan.excludedFeatures" :key="'excluded-' + feature"
                                 class="flex items-start gap-2">
-                                <svg class="w-5 h-5 mt-0.5 flex-shrink-0 text-[#EF4444]/50" fill="currentColor"
+                                <svg class="w-5 h-5 mt-0.5 shrink-0 text-[#EF4444]/50" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
