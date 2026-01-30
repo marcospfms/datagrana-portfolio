@@ -97,6 +97,9 @@ class AuthController extends BaseController
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
+        if ($user->google_id) {
+            return $this->sendError('Conta Google não permite atualização de perfil.', [], 403);
+        }
         $user->fill($request->validated());
 
         if ($user->isDirty('email')) {
@@ -112,6 +115,9 @@ class AuthController extends BaseController
 
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
+        if ($request->user()->google_id) {
+            return $this->sendError('Conta Google não permite alteração de senha.', [], 403);
+        }
         $request->user()->update([
             'password' => Hash::make($request->validated('password')),
         ]);
