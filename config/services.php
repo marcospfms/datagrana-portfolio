@@ -42,7 +42,7 @@ return [
 
     'revenuecat' => [
         'api_key' => env('REVENUECAT_API_KEY'),
-        'webhook_secret' => env('REVENUECAT_WEBHOOK_SECRET'),
+        'webhook_auth_header' => env('REVENUECAT_WEBHOOK_AUTH_HEADER'),
         'public_app_key' => env('REVENUECAT_PUBLIC_APP_KEY'),
     ],
 

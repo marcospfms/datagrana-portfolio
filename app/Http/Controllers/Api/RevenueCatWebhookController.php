@@ -15,7 +15,7 @@ class RevenueCatWebhookController extends BaseController
     public function handle(Request $request): JsonResponse
     {
         try {
-            $this->validateWebhookSignature($request);
+            $this->validateAuthorizationHeader($request);
             $this->webhookService->processWebhook($request->all());
 
             return $this->sendResponse(['status' => 'success'], 'Webhook processado com sucesso.');
@@ -33,20 +33,18 @@ class RevenueCatWebhookController extends BaseController
         }
     }
 
-    private function validateWebhookSignature(Request $request): void
+    private function validateAuthorizationHeader(Request $request): void
     {
-        $signature = $request->header('X-RevenueCat-Signature');
-        $webhookSecret = config('services.revenuecat.webhook_secret');
+        $expected = config('services.revenuecat.webhook_auth_header');
 
-        if (!$signature || !$webhookSecret) {
-            throw new \Exception('Missing webhook signature or secret');
+        if (!$expected) {
+            return;
         }
 
-        $payload = $request->getContent();
-        $computedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+        $authorization = $request->header('Authorization');
 
-        if (!hash_equals($computedSignature, $signature)) {
-            throw new \Exception('Invalid webhook signature');
+        if ($authorization !== $expected) {
+            throw new \Exception('Invalid webhook authorization header');
         }
     }
 }
