@@ -10,8 +10,6 @@ jobs:
   tests:
     name: Run Tests
     runs-on: ubuntu-latest
-    env:
-      VITE_WEB_APP_ENABLED: 'false'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -62,7 +60,6 @@ jobs:
         run: php artisan key:generate
 
       - name: Build Assets
-        if: env.VITE_WEB_APP_ENABLED == 'true'
         run: npm run build
 
       - name: Execute Tests
