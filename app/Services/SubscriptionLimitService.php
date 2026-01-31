@@ -262,7 +262,11 @@ class SubscriptionLimitService
 
     public function ensureUserHasSubscription(User $user): UserSubscription
     {
-        $subscription = $user->subscriptions()->active()->first();
+        $subscription = $user->subscriptions()
+            ->active()
+            ->orderByDesc('is_paid')
+            ->orderByDesc('created_at')
+            ->first();
 
         if (!$subscription) {
             $subscription = $this->createFreeSubscription($user);
