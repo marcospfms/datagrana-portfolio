@@ -62,6 +62,28 @@ class UserSubscriptionUsage extends Model
         $this->save();
     }
 
+    public function getCompositionsByPortfolio(): array
+    {
+        return Composition::whereHas('portfolio', function ($query) {
+            $query->where('user_id', $this->user_id);
+        })
+            ->selectRaw('portfolio_id, count(*) as total')
+            ->groupBy('portfolio_id')
+            ->pluck('total', 'portfolio_id')
+            ->toArray();
+    }
+
+    public function getMaxCompositionsPerPortfolio(): int
+    {
+        $counts = $this->getCompositionsByPortfolio();
+
+        if (!$counts) {
+            return 0;
+        }
+
+        return (int) max($counts);
+    }
+
     public function incrementCounter(string $counter, int $amount = 1): void
     {
         $this->{$counter} = $this->{$counter} + $amount;

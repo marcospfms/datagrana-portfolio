@@ -16,6 +16,8 @@ class UserSubscription extends Model
         'subscription_plan_id',
         'plan_name',
         'plan_slug',
+        'pending_plan_slug',
+        'pending_effective_at',
         'price_monthly',
         'limits_snapshot',
         'features_snapshot',
@@ -51,6 +53,7 @@ class UserSubscription extends Model
         'trial_ends_at' => 'datetime',
         'canceled_at' => 'datetime',
         'paid_at' => 'datetime',
+        'pending_effective_at' => 'datetime',
         'renewal_count' => 'integer',
     ];
     }

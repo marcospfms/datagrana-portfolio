@@ -51,6 +51,7 @@ Assinatura do Usuário (User Subscription)
 ### 2. Plano Investidor Iniciante (Starter)
 **Público:** Investidores começando a diversificar
 **Preço:** R$ 19,90/mês
+**Trial:** 3 dias (avisar no app e seguir regras de cancelamento em trial)
 
 **Limites:**
 - ✅ 2 portfólios
@@ -65,6 +66,7 @@ Assinatura do Usuário (User Subscription)
 ### 3. Plano Investidor Pro (Pro)
 **Público:** Investidores ativos com múltiplas estratégias
 **Preço:** R$ 39,90/mês
+**Trial:** 3 dias (avisar no app e seguir regras de cancelamento em trial)
 
 **Limites:**
 - ✅ 4 portfólios (dobro do Iniciante)
@@ -80,6 +82,7 @@ Assinatura do Usuário (User Subscription)
 ### 4. Plano Investidor Premium (Premium)
 **Público:** Investidores profissionais
 **Preço:** R$ 79,90/mês
+**Trial:** 7 dias (avisar no app e seguir regras de cancelamento em trial)
 
 **Limites:**
 - ✅ **Portfólios ilimitados**
@@ -124,6 +127,43 @@ Todas as operações de banco devem validar:
 - Recursos/listas devem **expor campos calculados** para consumo direto no app:
   - `is_locked` em contas, carteiras, composições e posições.
 - Objetivo: evitar inconsistência, delays e bypass por engenharia reversa.
+
+---
+
+## 🔁 Fluxos de assinatura (Play Store + RevenueCat)
+
+### Regras de negócio decididas
+
+- **Downgrade permitido com efeito na próxima renovação.**
+  - App deve avisar: “Seu downgrade será aplicado na próxima renovação.”
+  - Backend deve aceitar o evento `PRODUCT_CHANGE` quando ele entrar em vigor.
+- **Cancelamento rígido apenas durante trial.**
+  - Se a assinatura **está em trial** e o usuário cancela, **perde acesso imediatamente**.
+  - Se a assinatura **já foi cobrada**, o cancelamento **não corta acesso** até o fim do período.
+- **Reassinatura após expiração** cria nova linha de assinatura (novo `original_transaction_id`).
+
+### Cenários e comportamento esperado
+
+1) **Upgrade (plano mais caro)**
+   - Play Store/ReveuneCat fazem prorrateio/ajuste automaticamente.
+   - Backend aceita e atualiza a assinatura atual.
+
+2) **Downgrade (plano mais barato)**
+   - **Permitido**, mas **aplica na próxima renovação** (deferred).
+   - App deve exibir aviso explícito sobre a data de troca.
+
+3) **Cancelamento**
+   - Play Store envia `CANCELLATION` e depois `EXPIRATION`.
+   - Regra atual: se **trial**, corta na hora; se **não-trial**, mantém até `ends_at`.
+
+4) **Expiração**
+   - `EXPIRATION` encerra acesso e marca assinatura como `expired`.
+
+### Observações técnicas
+
+- O **backend é a fonte de verdade**: qualquer downgrade deve ser bloqueado na API.
+- No caso de cancelamento, a lógica deve considerar `period_type=TRIAL` para corte imediato.
+- A API de assinatura atual deve expor `pending_plan_slug` e `pending_effective_at` para o app informar downgrade agendado.
 
 ---
 
