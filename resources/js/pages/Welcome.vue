@@ -131,19 +131,18 @@ const testimonials = [
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
             rel="stylesheet" />
-        <link rel="icon" type="image/png" href="/images/favicon.png" />
     </Head>
 
     <!-- Navegação Fixa -->
     <nav
         class="fixed top-0 left-0 right-0 z-50 bg-linear-to-b from-[#0b1216] to-[#0b1216]/95 backdrop-blur-lg border-b border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center gap-3">
-                    <img src="/images/icon-transparent.png" alt="DataGrana" class="w-10 h-10" />
+            <div class="flex justify-between items-center h-14 sm:h-16">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <img src="/storage/images/icon-transparent.png" alt="DataGrana" class="w-8 h-8 sm:w-10 sm:h-10" />
                     <div>
-                        <span class="text-lg font-bold text-[#fef6ea]">Datagrana App</span>
-                        <p class="text-xs text-[#b9d6d0]">Carteiras reais, decisões claras.</p>
+                        <span class="text-sm sm:text-lg font-bold text-[#fef6ea]">Datagrana App</span>
+                        <p class="text-[10px] sm:text-xs text-[#b9d6d0] hidden sm:block">Carteiras reais, decisões claras.</p>
                     </div>
                 </div>
 
@@ -156,21 +155,22 @@ const testimonials = [
                         class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors font-medium text-sm">Depoimentos</a>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 sm:gap-4">
                     <template v-if="$page.props.auth.user">
                         <Link :href="dashboard()"
-                            class="px-6 py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all">
+                            class="px-4 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all text-sm">
                             Dashboard
                         </Link>
                     </template>
                     <template v-else>
                         <a href="https://play.google.com/store" target="_blank" rel="noopener"
-                            class="px-6 py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all flex items-center gap-2">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            class="px-3 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path
                                     d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
                             </svg>
-                            <span>Baixar App</span>
+                            <span class="hidden xs:inline">Baixar App</span>
+                            <span class="xs:hidden">App</span>
                         </a>
                     </template>
                 </div>
@@ -188,7 +188,7 @@ const testimonials = [
         </div>
 
         <!-- Hero + Screenshots Section (Lado a Lado) -->
-        <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative">
+        <section class="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8 relative">
             <div class="max-w-7xl mx-auto">
                 <div class="grid lg:grid-cols-2 gap-12 items-center">
                     <!-- Hero Content - Esquerda -->
@@ -215,7 +215,7 @@ const testimonials = [
                         </div>
 
                         <!-- Headline -->
-                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#fef6ea] leading-tight mb-6">
+                        <h1 class="text-3xl sm:text-4xl lg:text-6xl font-bold text-[#fef6ea] leading-tight mb-4 sm:mb-6">
                             Seus investimentos
                             <span
                                 class="bg-linear-to-r from-[#17a2b8] to-[#3ec9c2] bg-clip-text text-transparent block">
@@ -223,52 +223,52 @@ const testimonials = [
                             </span>
                         </h1>
 
-                        <p class="text-xl text-[#cfe3df] mb-8 leading-relaxed">
+                        <p class="text-base sm:text-xl text-[#cfe3df] mb-6 sm:mb-8 leading-relaxed">
                             Acompanhe tudo em um único painel. Posições consolidadas, metas e crossing em tempo real.
                         </p>
 
                         <!-- Prova Social -->
-                        <div class="grid grid-cols-3 gap-6 mb-8">
+                        <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-[#17a2b8]">{{ userCount.toLocaleString('pt-BR') }}+
+                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{ userCount.toLocaleString('pt-BR') }}+
                                 </div>
-                                <div class="text-xs text-[#b9d6d0]">Investidores</div>
+                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Investidores</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-[#17a2b8]">{{ portfolioCount.toLocaleString('pt-BR')
+                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{ portfolioCount.toLocaleString('pt-BR')
                                 }}+
                                 </div>
-                                <div class="text-xs text-[#b9d6d0]">Carteiras</div>
+                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Carteiras</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-[#17a2b8]">R$ 2.4Bi+</div>
-                                <div class="text-xs text-[#b9d6d0]">Patrimônio</div>
+                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">R$ 2.4Bi+</div>
+                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Patrimônio</div>
                             </div>
                         </div>
 
                         <!-- Store Badges -->
-                        <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <a href="https://play.google.com/store" target="_blank" rel="noopener"
-                                class="group flex items-center gap-3 px-6 py-3 bg-white text-gray-900 rounded-xl transition-all hover:scale-105 hover:shadow-xl">
-                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                                class="group flex items-center justify-center gap-3 px-4 sm:px-6 py-3 bg-white text-gray-900 rounded-xl transition-all hover:scale-105 hover:shadow-xl">
+                                <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="currentColor">
                                     <path
                                         d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
                                 </svg>
                                 <div class="text-left">
                                     <div class="text-xs opacity-70">Disponível na</div>
-                                    <div class="text-base font-bold">Google Play</div>
+                                    <div class="text-sm sm:text-base font-bold">Google Play</div>
                                 </div>
                             </a>
 
                             <div
-                                class="flex items-center gap-3 px-6 py-3 bg-white/10 text-[#cfe3df] rounded-xl cursor-not-allowed backdrop-blur-sm border border-white/10">
-                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                                class="flex items-center justify-center gap-3 px-4 sm:px-6 py-3 bg-white/10 text-[#cfe3df] rounded-xl cursor-not-allowed backdrop-blur-sm border border-white/10">
+                                <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="currentColor">
                                     <path
                                         d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
                                 </svg>
                                 <div class="text-left">
                                     <div class="text-xs opacity-70">Em breve na</div>
-                                    <div class="text-base font-bold">App Store</div>
+                                    <div class="text-sm sm:text-base font-bold">App Store</div>
                                 </div>
                             </div>
                         </div>
@@ -303,9 +303,9 @@ const testimonials = [
                     </div>
 
                     <!-- Screenshots Carousel - Direita -->
-                    <div class="relative">
+                    <div class="relative mt-8 lg:mt-0">
                         <!-- Phone Frame -->
-                        <div class="relative max-w-sm mx-auto mt-3">
+                        <div class="relative max-w-[280px] sm:max-w-sm mx-auto">
                             <!-- Glow atrás do celular -->
                             <div
                                 class="absolute inset-0 bg-linear-to-r from-[#17a2b8] to-[#3ec9c2] rounded-[3rem] blur-3xl opacity-30 animate-pulse">
@@ -317,7 +317,7 @@ const testimonials = [
                                     class="bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] rounded-[2.5rem] overflow-hidden">
                                     <!-- Screenshot Content -->
                                     <div
-                                        class="h-170 bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] p-5 relative overflow-hidden">
+                                        class="h-[500px] sm:h-[600px] bg-linear-to-br from-[#0b1216] via-[#0b2a2b] to-[#091f1e] p-4 sm:p-5 relative overflow-hidden overflow-y-auto">
                                         <!-- Glows internos -->
                                         <div
                                             class="absolute top-0 right-0 w-32 h-32 bg-[#f7c873] opacity-20 blur-3xl rounded-full">
@@ -879,13 +879,13 @@ const testimonials = [
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
+        <section id="features" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
             <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl sm:text-4xl font-bold text-[#fef6ea] mb-4">
+                <div class="text-center mb-10 sm:mb-16">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-3 sm:mb-4 px-4">
                         Por que investidores escolhem o DataGrana?
                     </h2>
-                    <p class="text-xl text-[#cfe3df] max-w-2xl mx-auto">
+                    <p class="text-base sm:text-xl text-[#cfe3df] max-w-2xl mx-auto px-4">
                         Controle total dos investimentos na palma da mão
                     </p>
                 </div>
@@ -904,75 +904,75 @@ const testimonials = [
         </section>
 
         <!-- Pricing Section -->
-        <section id="pricing" class="py-20 px-4 sm:px-6 lg:px-8 relative">
+        <section id="pricing" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
             <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
+                <div class="text-center mb-12 sm:mb-16">
                     <div
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-6 backdrop-blur-sm">
-                        <span class="text-red-400 text-sm font-semibold">⏰ Promoção de lançamento - 33% OFF nos 3
+                        class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-4 sm:mb-6 backdrop-blur-sm">
+                        <span class="text-red-400 text-xs sm:text-sm font-semibold">⏰ Promoção de lançamento - 33% OFF nos 3
                             primeiros
                             meses</span>
                     </div>
 
-                    <h2 class="text-3xl sm:text-4xl font-bold text-[#fef6ea] mb-4">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-3 sm:mb-4 px-4">
                         Comece grátis, escale quando precisar
                     </h2>
-                    <p class="text-xl text-[#cfe3df] max-w-2xl mx-auto">
+                    <p class="text-base sm:text-xl text-[#cfe3df] max-w-2xl mx-auto px-4">
                         Sem truques, sem letras miúdas. Cancele quando quiser.
                     </p>
                 </div>
 
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div v-for="plan in plans" :key="plan.name"
-                        :class="['relative p-8 rounded-2xl border-2 transition-all hover:scale-105', plan.highlight ? 'bg-linear-to-br from-[#17a2b8] to-[#0d5f5f] border-[#17a2b8] shadow-2xl shadow-[#17a2b8]/30 scale-105 text-white' : 'bg-white/5 backdrop-blur-sm border-white/10 hover:border-[#17a2b8]']">
+                        :class="['relative p-5 sm:p-8 rounded-2xl border-2 transition-all sm:hover:scale-105', plan.highlight ? 'bg-linear-to-br from-[#17a2b8] to-[#0d5f5f] border-[#17a2b8] shadow-2xl shadow-[#17a2b8]/30 sm:scale-105 text-white' : 'bg-white/5 backdrop-blur-sm border-white/10 hover:border-[#17a2b8]']">
 
                         <div v-if="plan.badge"
-                            :class="['absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap', plan.highlight ? 'bg-amber-400 text-gray-900' : 'bg-[#17a2b8] text-white']">
+                            :class="['absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap', plan.highlight ? 'bg-amber-400 text-gray-900' : 'bg-[#17a2b8] text-white']">
                             {{ plan.badge }}
                         </div>
 
-                        <h3 :class="['text-2xl font-bold mb-2', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">{{
+                        <h3 :class="['text-xl sm:text-2xl font-bold mb-2', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">{{
                             plan.name }}</h3>
-                        <p :class="['text-sm mb-4', plan.highlight ? 'text-white/80' : 'text-[#cfe3df]']">{{
+                        <p :class="['text-xs sm:text-sm mb-4', plan.highlight ? 'text-white/80' : 'text-[#cfe3df]']">{{
                             plan.description }}</p>
 
-                        <div class="mb-6">
+                        <div class="mb-5 sm:mb-6">
                             <div class="flex items-baseline gap-1">
-                                <span :class="['text-4xl font-bold', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">
+                                <span :class="['text-3xl sm:text-4xl font-bold', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">
                                     R$ {{ plan.price.toFixed(2).replace('.', ',') }}
                                 </span>
-                                <span :class="['text-lg', plan.highlight ? 'text-white/80' : 'text-[#b9d6d0]']">{{
+                                <span :class="['text-base sm:text-lg', plan.highlight ? 'text-white/80' : 'text-[#b9d6d0]']">{{
                                     plan.period }}</span>
                             </div>
                             <div v-if="plan.price > 0"
-                                :class="['text-sm mt-1', plan.highlight ? 'text-white/70' : 'text-[#b9d6d0]']">
+                                :class="['text-xs sm:text-sm mt-1', plan.highlight ? 'text-white/70' : 'text-[#b9d6d0]']">
                                 <span class="line-through">R$ {{ (plan.price * 1.5).toFixed(2).replace('.', ',')
                                 }}</span>
                                 <span class="ml-2 font-semibold text-[#10B981]">33% OFF</span>
                             </div>
                         </div>
 
-                        <ul class="space-y-3 mb-8">
+                        <ul class="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                             <li v-for="feature in plan.features" :key="feature" class="flex items-start gap-2">
-                                <svg class="w-5 h-5 mt-0.5 shrink-0"
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 shrink-0"
                                     :class="plan.highlight ? 'text-white' : 'text-[#17a2b8]'" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                <span :class="plan.highlight ? 'text-white' : 'text-[#cfe3df]'">{{ feature }}</span>
+                                <span :class="['text-xs sm:text-sm', plan.highlight ? 'text-white' : 'text-[#cfe3df]']">{{ feature }}</span>
                             </li>
                             <li v-for="feature in plan.excludedFeatures" :key="'excluded-' + feature"
                                 class="flex items-start gap-2">
-                                <svg class="w-5 h-5 mt-0.5 shrink-0 text-[#EF4444]/50" fill="currentColor"
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 shrink-0 text-[#EF4444]/50" fill="currentColor"
                                     viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                                         clip-rule="evenodd" />
                                 </svg>
                                 <span
-                                    :class="plan.highlight ? 'text-white/50 line-through' : 'text-[#cfe3df]/50 line-through'">{{
+                                    :class="['text-xs sm:text-sm', plan.highlight ? 'text-white/50 line-through' : 'text-[#cfe3df]/50 line-through']">{{
                                         feature }}</span>
                             </li>
                         </ul>
@@ -984,17 +984,17 @@ const testimonials = [
                     </div>
                 </div>
 
-                <div class="mt-12 text-center">
+                <div class="mt-8 sm:mt-12 text-center">
                     <div
-                        class="inline-flex items-center gap-3 px-6 py-4 bg-[#10B981]/10 border-2 border-[#10B981]/30 rounded-xl backdrop-blur-sm">
-                        <svg class="w-8 h-8 text-[#10B981]" fill="currentColor" viewBox="0 0 20 20">
+                        class="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-[#10B981]/10 border-2 border-[#10B981]/30 rounded-xl backdrop-blur-sm">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-[#10B981] shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                 clip-rule="evenodd" />
                         </svg>
                         <div class="text-left">
-                            <div class="font-bold text-[#10B981]">Garantia de 7 dias</div>
-                            <div class="text-sm text-[#10B981]/80">Reembolso total, sem perguntas</div>
+                            <div class="font-bold text-[#10B981] text-sm sm:text-base">Garantia de 7 dias</div>
+                            <div class="text-xs sm:text-sm text-[#10B981]/80">Reembolso total, sem perguntas</div>
                         </div>
                     </div>
                 </div>
@@ -1003,13 +1003,13 @@ const testimonials = [
 
         <!-- Testimonials -->
         <section id="testimonials"
-            class="py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
+            class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
             <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl sm:text-4xl font-bold text-[#fef6ea] mb-4">
+                <div class="text-center mb-10 sm:mb-16">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-3 sm:mb-4 px-4">
                         O que investidores estão dizendo
                     </h2>
-                    <p class="text-xl text-[#cfe3df]">
+                    <p class="text-base sm:text-xl text-[#cfe3df] px-4">
                         Milhares de investidores já transformaram sua gestão financeira
                     </p>
                 </div>
@@ -1043,26 +1043,26 @@ const testimonials = [
         </section>
 
         <!-- CTA Final -->
-        <section class="py-20 px-4 sm:px-6 lg:px-8 relative">
+        <section class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
             <div class="absolute inset-0 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] opacity-10"></div>
             <div class="max-w-4xl mx-auto text-center relative z-10">
-                <h2 class="text-3xl sm:text-4xl font-bold text-[#fef6ea] mb-6">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-4 sm:mb-6 px-4">
                     Baixe agora e comece grátis
                 </h2>
-                <p class="text-xl mb-6 text-[#cfe3df]">
+                <p class="text-base sm:text-xl mb-4 sm:mb-6 text-[#cfe3df] px-4">
                     Junte-se a mais de 12.000 investidores que já estão tomando decisões mais assertivas
                 </p>
 
                 <div
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-8 border border-white/20">
+                    class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6 sm:mb-8 border border-white/20">
                     <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
-                    <span class="text-sm font-semibold text-amber-400">⚡ Últimas 47 vagas com 33% OFF</span>
+                    <span class="text-xs sm:text-sm font-semibold text-amber-400">⚡ Últimas 47 vagas com 33% OFF</span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
                     <a href="https://play.google.com/store" target="_blank" rel="noopener"
-                        class="inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-xl font-bold text-lg hover:scale-105 transition-all shadow-xl">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        class="inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white text-gray-900 rounded-xl font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-xl">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
                         </svg>
@@ -1070,8 +1070,8 @@ const testimonials = [
                     </a>
 
                     <div
-                        class="inline-flex items-center gap-3 px-8 py-4 bg-white/10 text-[#cfe3df] rounded-xl font-bold text-lg cursor-not-allowed backdrop-blur-sm border border-white/20">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        class="inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white/10 text-[#cfe3df] rounded-xl font-bold text-base sm:text-lg cursor-not-allowed backdrop-blur-sm border border-white/20">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
                         </svg>
@@ -1079,7 +1079,7 @@ const testimonials = [
                     </div>
                 </div>
 
-                <p class="mt-6 text-sm text-[#b9d6d0]">
+                <p class="mt-4 sm:mt-6 text-xs sm:text-sm text-[#b9d6d0]">
                     Baixe grátis • Teste por 7 dias • Cancele quando quiser
                 </p>
             </div>
@@ -1091,7 +1091,7 @@ const testimonials = [
                 <div class="grid md:grid-cols-4 gap-8 mb-8">
                     <div class="md:col-span-2">
                         <div class="flex items-center gap-3 mb-4">
-                            <img src="/images/icon-transparent.png" alt="DataGrana" class="w-10 h-10" />
+                            <img src="/storage/images/icon-transparent.png" alt="DataGrana" class="w-10 h-10" />
                             <div>
                                 <span class="text-lg font-bold text-[#fef6ea]">Datagrana App</span>
                                 <p class="text-xs text-[#b9d6d0]">Carteiras reais, decisões claras.</p>
