@@ -33,6 +33,7 @@ class UserSubscriptionResource extends JsonResource
             'status' => $this->status,
             'is_active' => $this->isActive(),
             'is_trialing' => $this->isTrialing(),
+            'has_had_paid_plan' => (bool) ($this->has_had_paid_plan ?? false),
             'pending_plan_slug' => $this->pending_plan_slug,
             'pending_effective_at' => $this->pending_effective_at?->toIso8601String(),
             'starts_at' => $this->starts_at?->toIso8601String(),

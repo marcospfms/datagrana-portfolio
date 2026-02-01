@@ -31,6 +31,11 @@ class UserSubscriptionController extends BaseController
             $subscription->load('usage');
         }
 
+        $hasHadPaidPlan = $user->subscriptions()
+            ->where('is_paid', true)
+            ->exists();
+        $subscription->setAttribute('has_had_paid_plan', $hasHadPaidPlan);
+
         return $this->sendResponse(
             new UserSubscriptionResource($subscription),
             'Assinatura atual carregada com sucesso.'
