@@ -4,6 +4,8 @@ namespace Tests\Feature\Portfolio;
 
 use App\Models\Composition;
 use App\Models\Portfolio;
+use App\Models\SubscriptionPlan;
+use App\Services\SubscriptionLimitService;
 use Tests\TestCase;
 
 class CompositionDestroyTest extends TestCase
@@ -34,6 +36,9 @@ class CompositionDestroyTest extends TestCase
     public function test_can_save_to_history_on_remove(): void
     {
         $auth = $this->createAuthenticatedUser();
+        $service = app(SubscriptionLimitService::class);
+        $plan = SubscriptionPlan::where('slug', 'starter')->firstOrFail();
+        $service->createSubscriptionFromPlan($auth['user'], $plan);
         $portfolio = Portfolio::factory()->forUser($auth['user'])->create();
         $composition = Composition::factory()->forPortfolio($portfolio)->create([
             'percentage' => 15.00,
