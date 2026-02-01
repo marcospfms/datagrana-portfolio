@@ -165,6 +165,16 @@ class SubscriptionLimitService
         return $subscription->hasFeature('allow_composition_history');
     }
 
+    public function ensureCanViewCompositionHistory(User $user): void
+    {
+        if (!$this->canViewCompositionHistory($user)) {
+            $subscription = $this->getActiveSubscription($user);
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} não permite salvar histórico de composições."
+            );
+        }
+    }
+
     public function ensureCanCreatePortfolio(User $user): void
     {
         if (!$this->canCreatePortfolio($user)) {
