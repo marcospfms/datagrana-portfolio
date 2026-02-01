@@ -161,7 +161,7 @@ Todas as operações de banco devem validar:
 
 ### Observações técnicas
 
-- O **backend é a fonte de verdade**: qualquer downgrade deve ser bloqueado na API.
+- O **backend é a fonte de verdade**: downgrade é permitido, mas deve respeitar o agendamento de troca na próxima renovação.
 - No caso de cancelamento, a lógica deve considerar `period_type=TRIAL` para corte imediato.
 - A API de assinatura atual deve expor `pending_plan_slug` e `pending_effective_at` para o app informar downgrade agendado.
 
