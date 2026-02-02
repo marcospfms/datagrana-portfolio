@@ -19,6 +19,43 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache zip
 
+# Install Google Chrome for Testing (headless) + ChromeDriver (pareados)
+RUN apt-get update && apt-get install -y \
+    wget \
+    jq \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libasound2 \
+    libxshmfence1 \
+    fonts-liberation \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    JSON_URL="https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"; \
+    CHROME_URL=$(wget -qO- "$JSON_URL" | jq -r '.channels.Stable.downloads.chrome[] | select(.platform=="linux64") | .url'); \
+    DRIVER_URL=$(wget -qO- "$JSON_URL" | jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="linux64") | .url'); \
+    wget -q "$CHROME_URL" -O /tmp/chrome.zip; \
+    wget -q "$DRIVER_URL" -O /tmp/chromedriver.zip; \
+    unzip -q /tmp/chrome.zip -d /opt/chrome/; \
+    unzip -q /tmp/chromedriver.zip -d /opt/chrome/; \
+    ln -sf /opt/chrome/chrome-linux64/chrome /usr/local/bin/google-chrome; \
+    ln -sf /opt/chrome/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver; \
+    chmod +x /opt/chrome/chrome-linux64/chrome /opt/chrome/chromedriver-linux64/chromedriver; \
+    rm -f /tmp/chrome.zip /tmp/chromedriver.zip
+
+ENV PANTHER_CHROME_BINARY=/opt/chrome/chrome-linux64/chrome
+ENV PANTHER_CHROME_DRIVER_BINARY=/opt/chrome/chromedriver-linux64/chromedriver
+ENV PANTHER_NO_SANDBOX=1
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

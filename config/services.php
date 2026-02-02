@@ -46,4 +46,10 @@ return [
         'public_app_key' => env('REVENUECAT_PUBLIC_APP_KEY'),
     ],
 
+    'panther' => [
+        'chrome_binary' => env('PANTHER_CHROME_BINARY', '/opt/chrome/chrome-linux64/chrome'),
+        'chrome_driver_binary' => env('PANTHER_CHROME_DRIVER_BINARY', '/opt/chrome/chromedriver-linux64/chromedriver'),
+        'no_sandbox' => env('PANTHER_NO_SANDBOX', true),
+    ],
+
 ];
