@@ -9,6 +9,7 @@ class RevenueCatWebhookLog extends Model
     protected $table = 'revenuecat_webhook_logs';
 
     protected $fillable = [
+        'event_id',
         'event_type',
         'app_user_id',
         'subscriber_id',
@@ -16,6 +17,7 @@ class RevenueCatWebhookLog extends Model
         'entitlement_id',
         'store',
         'original_transaction_id',
+        'user_subscription_id',
         'payload',
         'status',
         'processed_at',

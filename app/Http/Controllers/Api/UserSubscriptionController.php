@@ -17,12 +17,24 @@ class UserSubscriptionController extends BaseController
     {
         $user = $request->user();
 
-        $subscription = $user->subscriptions()->active()->with('usage')->first();
+        $subscription = $user->subscriptions()
+            ->active()
+            ->with('usage')
+            ->orderByDesc('is_paid')
+            ->orderByDesc('price_monthly')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('created_at')
+            ->first();
 
         if (!$subscription) {
             $subscription = $this->limitService->createFreeSubscription($user);
             $subscription->load('usage');
         }
+
+        $hasHadPaidPlan = $user->subscriptions()
+            ->where('is_paid', true)
+            ->exists();
+        $subscription->setAttribute('has_had_paid_plan', $hasHadPaidPlan);
 
         return $this->sendResponse(
             new UserSubscriptionResource($subscription),

@@ -42,8 +42,14 @@ return [
 
     'revenuecat' => [
         'api_key' => env('REVENUECAT_API_KEY'),
-        'webhook_secret' => env('REVENUECAT_WEBHOOK_SECRET'),
+        'webhook_auth_header' => env('REVENUECAT_WEBHOOK_AUTH_HEADER'),
         'public_app_key' => env('REVENUECAT_PUBLIC_APP_KEY'),
+    ],
+
+    'panther' => [
+        'chrome_binary' => env('PANTHER_CHROME_BINARY', '/opt/chrome/chrome-linux64/chrome'),
+        'chrome_driver_binary' => env('PANTHER_CHROME_DRIVER_BINARY', '/opt/chrome/chromedriver-linux64/chromedriver'),
+        'no_sandbox' => env('PANTHER_NO_SANDBOX', true),
     ],
 
 ];

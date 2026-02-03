@@ -50,6 +50,16 @@ class CompanyTicker extends Model
         return $this->hasMany(Composition::class);
     }
 
+    public function closings(): HasMany
+    {
+        return $this->hasMany(CompanyClosing::class);
+    }
+
+    public function companyEarnings(): HasMany
+    {
+        return $this->hasMany(CompanyEarning::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);

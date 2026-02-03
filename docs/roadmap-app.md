@@ -11,6 +11,7 @@
 - ✅ Regra: limites e bloqueios (ex.: `is_locked`) calculados no backend; frontend consome pronto.
 - ✅ App consumindo: auth, accounts, consolidated (lista, resumo, transacoes), portfolios/compositions, crossing.
 - 🔜 Evolucao pos-MVP (app): companies categories/popular/detail, update batch de composicoes, historico detalhado de composicoes.
+- 🔜 Fluxos de assinatura (app + backend) definidos em V7: downgrade permitido (efeito na renovação), aviso explícito no app; cancelamento rígido só em trial.
 - Arquivos de referencia (app):
   - `datagrana-app/app/(tabs)/(home)/index.tsx`
   - `datagrana-app/app/(tabs)/(assets)/transactions/*`
@@ -50,6 +51,16 @@ O **Portfolio** e um sistema de gestao de carteiras de investimento em **Renda V
 3. Cadastrar compras de ativos (posicoes consolidadas)
 4. Criar Portfolio com ativos e percentuais
 5. Visualizar comparacao (Crossing)
+
+### 1.3 Fluxos de assinatura no app (Resumo)
+
+- **Planos disponíveis:** permite **upgrade** e **downgrade**.
+- **Downgrade:** exibir aviso de que a mudança ocorre na próxima renovação.
+- **Downgrade pendente:** app deve exibir `pending_plan_slug` e `pending_effective_at` quando vierem na assinatura atual.
+- **Avisos de trial:** Starter e Pro = 3 dias; Premium = 7 dias.
+- **Cancelamento durante trial:** acesso cortado imediatamente.
+- **Cancelamento após cobrança:** mantém acesso até `ends_at`.
+- **Reassinatura após expiração:** gera nova assinatura (nova linha).
 
 ### 1.3 Funcionalidades Principais
 

@@ -2,7 +2,7 @@
 
 Guia completo de configuração do Google OAuth 2.0 do zero para o ecossistema DataGrana (Laravel backend + Expo mobile app).
 
-**Última atualização:** 2026-01-20
+**Última atualização:** 2026-01-30
 
 ---
 
@@ -1059,10 +1059,11 @@ tail -f datagrana-portfolio/storage/logs/laravel.log
 - [ ] `expo-auth-session` instalado
 - [ ] `app.json` configurado (scheme, bundleIdentifier, package)
 - [ ] `.env` configurado com 3 Client IDs
+- [x] Android Client ID configurado
 - [ ] Código de login implementado
 - [ ] Auth Service configurado
 - [ ] Development Build criado
-- [ ] Teste mobile funcionando
+- [x] Teste mobile funcionando (Android)
 
 ---
 

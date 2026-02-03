@@ -1,2 +1,5 @@
 *
 !.gitignore
+!apple-touch-icon.png
+!images/
+!images/*.png

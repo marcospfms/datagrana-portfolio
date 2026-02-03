@@ -24,6 +24,7 @@ class ProfileUpdateTest extends TestCase
     {
         $auth = $this->createAuthenticatedUser([
             'email' => 'john@example.com',
+            'google_id' => null,
         ]);
 
         $response = $this->patchJson('/api/auth/profile', [
@@ -74,5 +75,21 @@ class ProfileUpdateTest extends TestCase
         ], $this->authHeaders($auth['token']));
 
         $response->assertStatus(422);
+    }
+
+    public function test_cannot_update_profile_when_user_is_google_account(): void
+    {
+        $auth = $this->createAuthenticatedUser([
+            'google_id' => '1234567890',
+        ]);
+
+        $response = $this->patchJson('/api/auth/profile', [
+            'name' => 'John Updated',
+            'email' => 'john.updated@example.com',
+        ], $this->authHeaders($auth['token']));
+
+        $response->assertStatus(403)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Conta Google não permite atualização de perfil.');
     }
 }

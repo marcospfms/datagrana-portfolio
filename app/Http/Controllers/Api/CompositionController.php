@@ -118,6 +118,7 @@ class CompositionController extends BaseController
         ]);
 
         if ($request->boolean('save_to_history')) {
+            $limitService->ensureCanViewCompositionHistory($request->user());
             $history = new CompositionHistory();
             $history->timestamps = false;
             $history->fill([

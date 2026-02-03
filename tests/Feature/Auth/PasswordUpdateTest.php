@@ -9,7 +9,9 @@ class PasswordUpdateTest extends TestCase
 {
     public function test_can_update_password(): void
     {
-        $auth = $this->createAuthenticatedUser();
+        $auth = $this->createAuthenticatedUser([
+            'google_id' => null,
+        ]);
 
         $response = $this->putJson('/api/auth/password', [
             'current_password' => 'password',
@@ -49,5 +51,22 @@ class PasswordUpdateTest extends TestCase
         ]);
 
         $response->assertStatus(401);
+    }
+
+    public function test_cannot_update_password_when_user_is_google_account(): void
+    {
+        $auth = $this->createAuthenticatedUser([
+            'google_id' => '1234567890',
+        ]);
+
+        $response = $this->putJson('/api/auth/password', [
+            'current_password' => 'password',
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ], $this->authHeaders($auth['token']));
+
+        $response->assertStatus(403)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Conta Google não permite alteração de senha.');
     }
 }
