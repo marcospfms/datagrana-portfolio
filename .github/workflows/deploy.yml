@@ -182,7 +182,7 @@ jobs:
           fi
           echo "Version type to increment -> $VERSION_TYPE"
 
-          LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null || echo "")
+          LAST_TAG=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" --sort=-v:refname | head -n 1)
           if [[ -z "$LAST_TAG" ]]; then
             NEW_VERSION="v0.0.1"
           else
