@@ -121,7 +121,7 @@ jobs:
         run: curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_PRODUCTION }}"
 
   version:
-    name: Versionamento SemVer
+    name: Submit Release
     needs: deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -143,7 +143,7 @@ jobs:
           tools: composer:v2
 
       - name: Instalar ferramenta SemVer
-        run: composer require phlak/semver --dev
+        run: composer require phlak/semver --dev --no-scripts
 
       - name: Configurar Git User
         run: |
