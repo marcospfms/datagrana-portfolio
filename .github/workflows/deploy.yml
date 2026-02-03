@@ -118,3 +118,84 @@ jobs:
       - name: Deploy Production
         if: github.ref == 'refs/heads/main'
         run: curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_PRODUCTION }}"
+
+  version:
+    name: Versionamento SemVer
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      new_tag: ${{ steps.versioning.outputs.new_tag }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          tools: composer:v2
+
+      - name: Instalar ferramenta SemVer
+        run: composer require phlak/semver --dev
+
+      - name: Configurar Git User
+        run: |
+          git config --global user.name "Admin DataGrana"
+          git config --global user.email "admin@datagrana.app"
+
+      - name: Buscar tags
+        run: git fetch --prune --tags
+
+      - name: Capturar mensagem do ultimo commit
+        id: commit_message
+        run: |
+          {
+            echo 'message<<EOF'
+            git log -1 --pretty=%B
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Calcular nova versao e criar tag
+        id: versioning
+        run: |
+          set -e
+          LAST_COMMIT_MESSAGE="${{ steps.commit_message.outputs.message }}"
+          echo "Last commit message -> $LAST_COMMIT_MESSAGE"
+
+          shopt -s nocasematch
+          if [[ "$LAST_COMMIT_MESSAGE" =~ ^fix ]]; then
+            VERSION_TYPE="patch"
+          elif [[ "$LAST_COMMIT_MESSAGE" =~ ^feat ]]; then
+            VERSION_TYPE="minor"
+          elif [[ "$LAST_COMMIT_MESSAGE" =~ ^breaking[[:space:]]change ]]; then
+            VERSION_TYPE="major"
+          else
+            echo "No versioning keyword found. Incrementing patch by default."
+            VERSION_TYPE="patch"
+          fi
+          echo "Version type to increment -> $VERSION_TYPE"
+
+          LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null || echo "")
+          if [[ -z "$LAST_TAG" ]]; then
+            NEW_VERSION="v0.0.1"
+          else
+            NEW_VERSION=$(php -r "require 'vendor/autoload.php'; use PHLAK\\SemVer\\Version; \$version=new Version('$LAST_TAG'); \$newVersion=\$version->increment${VERSION_TYPE^}(); echo 'v'.\$newVersion;")
+          fi
+          echo "New version -> $NEW_VERSION"
+
+          if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+            echo "Tag $NEW_VERSION already exists"
+            exit 1
+          fi
+
+          echo "new_tag=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+          git tag -a "$NEW_VERSION" -m "$LAST_COMMIT_MESSAGE"
+          git push origin --tags || { echo "git push failed"; git tag; git show-ref --tags; exit 1; }
+          echo "Tag $NEW_VERSION pushed successfully."
