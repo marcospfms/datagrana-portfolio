@@ -1017,13 +1017,14 @@ const showFullData = hasFullCrossingAccess();
 - [ ] Testar endpoints
 
 ### Fase 4: RevenueCat Setup
-- [ ] Criar conta no RevenueCat
-- [ ] Configurar produtos (datagrana_investor_monthly, datagrana_premium_monthly)
-- [ ] Configurar entitlements (pro, premium)
-- [ ] Configurar ofertas
-- [ ] Obter API Keys (iOS, Android, Backend)
-- [ ] Configurar webhook URL
-- [ ] Adicionar variáveis no `.env`
+- [x] Criar conta no RevenueCat
+- [x] Configurar produtos (datagrana_starter_monthly, datagrana_pro_monthly, datagrana_premium_monthly)
+- [x] Configurar entitlements (starter, pro, premium)
+- [x] Configurar ofertas (default offering com 3 packages)
+- [x] Obter API Keys (Android: `goog_xxx...`)
+- [ ] Obter API Keys (iOS - pendente publicação na App Store)
+- [x] Configurar webhook URL (`https://datagrana.app/api/webhooks/revenuecat` com Bearer auth)
+- [x] Adicionar variáveis no `.env` (REVENUECAT_WEBHOOK_SECRET)
 
 ### Fase 5: Mobile Integration
 - [ ] Instalar `react-native-purchases`
