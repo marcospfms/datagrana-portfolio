@@ -290,8 +290,6 @@ class ConsolidatedTransactionController extends BaseController
 
                 DB::beginTransaction();
 
-                $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
-
                 $consolidationService->processDeleting($transaction);
 
                 DB::commit();
@@ -307,8 +305,6 @@ class ConsolidatedTransactionController extends BaseController
             }
 
             DB::beginTransaction();
-
-            $limitService->ensureCanEditPosition(auth()->user(), $transaction->consolidated);
 
             $consolidationService->processDeleting($transaction);
 

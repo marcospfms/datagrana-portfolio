@@ -82,4 +82,35 @@ class CompositionDestroyTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_can_remove_composition_outside_edit_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create();
+
+        $subscription = $auth['user']->activeSubscription()->first();
+        $limits = $subscription->limits_snapshot ?? [];
+        $limits['max_compositions'] = 1;
+        $subscription->update(['limits_snapshot' => $limits]);
+
+        $oldComposition = Composition::factory()->forPortfolio($portfolio)->create([
+            'created_at' => now()->subDays(2),
+        ]);
+        $newComposition = Composition::factory()->forPortfolio($portfolio)->create([
+            'created_at' => now(),
+        ]);
+
+        $service = app(SubscriptionLimitService::class);
+        $this->assertFalse($service->canEditComposition($auth['user'], $newComposition));
+
+        $response = $this->deleteJson(
+            "/api/compositions/{$newComposition->id}",
+            [],
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('compositions', ['id' => $newComposition->id]);
+        $this->assertDatabaseHas('compositions', ['id' => $oldComposition->id]);
+    }
 }

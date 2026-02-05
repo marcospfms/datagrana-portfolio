@@ -121,7 +121,6 @@ class PortfolioController extends BaseController
     public function destroy(Portfolio $portfolio, SubscriptionLimitService $limitService): JsonResponse
     {
         $this->authorize('delete', $portfolio);
-        $limitService->ensureCanEditPortfolio(auth()->user(), $portfolio);
 
         $portfolio->delete();
 

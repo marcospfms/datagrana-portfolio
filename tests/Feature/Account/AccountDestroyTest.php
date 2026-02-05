@@ -3,6 +3,7 @@
 namespace Tests\Feature\Account;
 
 use App\Models\Account;
+use App\Services\SubscriptionLimitService;
 use Tests\TestCase;
 
 class AccountDestroyTest extends TestCase
@@ -67,5 +68,27 @@ class AccountDestroyTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertDatabaseCount('accounts', 0);
+    }
+
+    public function test_can_delete_account_outside_edit_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $oldAccount = Account::factory()->create([
+            'user_id' => $auth['user']->id,
+            'created_at' => now()->subDays(2),
+        ]);
+        $newAccount = Account::factory()->create([
+            'user_id' => $auth['user']->id,
+            'created_at' => now(),
+        ]);
+
+        $limitService = app(SubscriptionLimitService::class);
+        $this->assertFalse($limitService->canEditAccount($auth['user'], $newAccount));
+
+        $response = $this->deleteJson("/api/accounts/{$newAccount->id}", [], $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('accounts', ['id' => $newAccount->id]);
+        $this->assertDatabaseHas('accounts', ['id' => $oldAccount->id]);
     }
 }

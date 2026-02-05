@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\CompanyTransaction;
 use App\Models\Consolidated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Services\SubscriptionLimitService;
 use Tests\TestCase;
 
 class ConsolidatedTransactionDestroyTest extends TestCase
@@ -122,5 +123,54 @@ class ConsolidatedTransactionDestroyTest extends TestCase
         $this->assertEquals('20.00000000', (string) $consolidated->average_purchase_price);
         $this->assertEquals('0.00000000', (string) $consolidated->average_selling_price);
         $this->assertFalse($consolidated->closed);
+    }
+
+    public function test_can_delete_transaction_outside_edit_limit(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+
+        $subscription = $auth['user']->activeSubscription()->first();
+        $limits = $subscription->limits_snapshot ?? [];
+        $limits['max_positions'] = 1;
+        $subscription->update(['limits_snapshot' => $limits]);
+
+        $oldConsolidated = Consolidated::factory()->forAccount($account)->create([
+            'created_at' => now()->subDays(2),
+            'quantity_current' => 1,
+            'quantity_purchased' => 1,
+            'total_purchased' => 10,
+            'average_purchase_price' => 10,
+        ]);
+        $newConsolidated = Consolidated::factory()->forAccount($account)->create([
+            'created_at' => now(),
+            'quantity_current' => 1,
+            'quantity_purchased' => 1,
+            'total_purchased' => 20,
+            'average_purchase_price' => 20,
+        ]);
+
+        $service = app(SubscriptionLimitService::class);
+        $this->assertFalse($service->canEditPosition($auth['user'], $newConsolidated));
+
+        $transaction = CompanyTransaction::factory()->create([
+            'consolidated_id' => $newConsolidated->id,
+            'operation' => 'C',
+            'quantity' => 1,
+            'price' => 20,
+            'total_value' => 20,
+        ]);
+
+        $response = $this->deleteJson(
+            "/api/consolidated/transactions/company/{$transaction->id}",
+            [],
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('company_transactions', ['id' => $transaction->id]);
+        $this->assertDatabaseHas('consolidated', ['id' => $oldConsolidated->id]);
     }
 }

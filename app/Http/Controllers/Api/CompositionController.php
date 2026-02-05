@@ -110,7 +110,6 @@ class CompositionController extends BaseController
     ): JsonResponse
     {
         $this->authorize('update', $composition->portfolio);
-        $limitService->ensureCanEditComposition($request->user(), $composition);
 
         $validated = $request->validate([
             'save_to_history' => ['boolean'],
