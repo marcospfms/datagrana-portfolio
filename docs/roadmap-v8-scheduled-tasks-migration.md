@@ -18,17 +18,16 @@ AlphaVantage fica como fallback opcional (nao agendado).
 | 1 | `app:reactivate-tickers` | Cada 45min | Media |
 | 2 | `app:update-mfinance-ticker-prices` | Cada 1min | Alta |
 | 3 | `app:sync-brapi-stock-list` | Segunda 04:00 | Media |
-| 4 | `app:crawl-fii-dividends` | Diario 08:30 | Media |
+
+> **Nota:** O comando `app:crawl-fii-dividends` foi descontinuado. O site Investidor10 mudou o layout, quebrando o crawler. Buscar APIs alternativas para dividendos de FIIs (ex: Brapi, StatusInvest API, ou CVM dados abertos).
 
 ---
 
 ## Fase 1 - Infraestrutura (Models + Helpers + Deps)
 
-### 1.1 Instalar dependencias
+### 1.1 Dependencias
 
-```bash
-composer require symfony/panther symfony/css-selector symfony/dom-crawler
-```
+Nenhuma dependencia externa necessaria para os 3 comandos atuais (usam apenas HTTP client nativo do Laravel).
 
 ### 1.2 Criar 4 Models (tabelas ja existem no banco compartilhado)
 
@@ -281,18 +280,6 @@ class TradingHelper
 
 ### 1.6 Config e Docker
 
-#### config/services.php
-
-Adicionar entrada para Panther:
-
-```php
-'panther' => [
-    'chrome_binary' => env('PANTHER_CHROME_BINARY', '/opt/chrome/chrome-linux64/chrome'),
-    'chrome_driver_binary' => env('PANTHER_CHROME_DRIVER_BINARY', '/opt/chrome/chromedriver-linux64/chromedriver'),
-    'no_sandbox' => env('PANTHER_NO_SANDBOX', true),
-],
-```
-
 #### docker/supervisord.conf
 
 Adicionar programa `schedule-worker` (mesmo padrao do `queue-worker` existente):
@@ -304,20 +291,8 @@ stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
-autorestart=unexpected
-exitcodes=0
-startretries=0
-```
-
-#### .env.example
-
-Adicionar variaveis:
-
-```env
-# Panther / Chrome Headless (crawler de dividendos FII)
-PANTHER_CHROME_BINARY=/opt/chrome/chrome-linux64/chrome
-PANTHER_CHROME_DRIVER_BINARY=/opt/chrome/chromedriver-linux64/chromedriver
-PANTHER_NO_SANDBOX=true
+autorestart=true
+startretries=3
 ```
 
 ---
@@ -506,51 +481,6 @@ protected $description = 'Sincroniza a lista de acoes/fiis/etfs da Brapi com com
 4. Log detalhado em `storage/logs/sync-brapi-stock-list_{timestamp}.log`
 5. Log de erros em `storage/logs/sync-brapi-stock-list_errors.log`
 
-### 3.4 CrawlFiiDividendsCommand (mais complexo)
-
-**Arquivo:** `app/Console/Commands/Crawler/CrawlFiiDividendsCommand.php`
-**Fonte:** `datagrana-web/app/Console/Commands/Crawler/CrawlFiiDividends.php` (512 linhas)
-
-```php
-protected $signature = 'app:crawl-fii-dividends {--ticker=} {--headless}';
-protected $description = 'Crawl dividends data from FIIs from consolidated portfolio';
-```
-
-**Logica:**
-1. `initializePanther()` - suporta remote WebDriver e local ChromeDriver
-   - Leitura de config: `config('services.panther.chrome_binary')`, `config('services.panther.chrome_driver_binary')`, `config('services.panther.no_sandbox')`
-   - Chrome options: `--disable-blink-features=AutomationControlled`, `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`, `--window-size=1920,1080`, `--headless=new` (novo headless do Chrome)
-   - Usa `Client::createChromeClient($driverBinary, $arguments)` com binarios do config
-   - Fallback local: `resolveChromeDriverBinary()` - tenta `vendor/bin/chromedriver`, `/usr/bin/chromedriver`, `drivers/chromedriver.exe` (Windows)
-2. Se `--ticker` fornecido: `crawlSingleFii(ticker)`
-3. Senao: `crawlMultipleFiis()`
-   - Query FIIs: `whereHas('consolidated', closed=false)`, `can_update=1`, company ativa, category `FII`
-   - Para cada FII: `shouldUpdateFii()` verifica:
-     - Ja atualizado hoje (`last_earnings_updated->isToday()`) -> skip
-     - Sem historico -> atualizar
-     - Ultimo `approved_date` + 30 dias <= hoje -> atualizar (janela atingida)
-     - Senao -> aguardando janela
-   - Progress bar, atualiza `last_earnings_updated` apos crawl
-4. `crawlSingleFii(ticker)`:
-   - Busca ticker no banco, busca `EarningType` por `key='REN'`
-   - Navega `https://investidor10.com.br/fiis/{ticker_lower}`
-   - Sleep 3s para carregar
-   - Loop ate 20 paginas:
-     - Extrai linhas de `#table-dividends-history tbody tr`
-     - Cada linha: `[tipo, com_date, payment_date, valor]` (4 colunas `td`)
-     - Verifica `#table-dividends-history_next` disabled via JS
-     - Clica no proximo via JS, sleep 2s
-   - Para cada dividendo: `saveDividend()`
-5. `saveDividend(companyTicker, earningType, data)`:
-   - Verifica duplicata por `[company_ticker_id, earning_type_id, approved_date, payment_date]`
-   - Se existe e valor mudou: `update(['value' => ..., 'origin' => 'crawler_investidor10'])`
-   - Se nao existe: `create(...)` com `origin='crawler_investidor10'`, `status=1`
-6. `parseDate(string)` - `d/m/Y` -> `Y-m-d` via Carbon
-7. `parseValue(string)` - `"R$ 0,XX"` -> float (remove `R$`, `.`, substitui `,` por `.`)
-8. `getRandomUserAgent()` - 4 user agents Chrome/Firefox
-9. `addRandomDelay()` - `usleep(rand(2000000, 5000000))` (2-5s entre FIIs)
-10. `displayStats()` - exibe contadores de success/failed/dividendos/skipped
-
 ---
 
 ## Fase 4 - Scheduler
@@ -562,79 +492,36 @@ Substituir o `inspire` command padrao por:
 ```php
 use Illuminate\Support\Facades\Schedule;
 
-// MFinance - cada minuto (auto-regula para horario de pregao via TradingHelper)
-Schedule::command('app:update-mfinance-ticker-prices --only-active --stale-minutes=30 --limit=50')
-    ->everyMinute()
-    ->withoutOverlapping()
-    ->runInBackground();
+// Comandos agendados só rodam em produção
+// Em sandbox, o scheduler roda mas não executa nada
+if (app()->environment('production')) {
+    // MFinance - cada minuto (auto-regula para horario de pregao via TradingHelper)
+    Schedule::command('app:update-mfinance-ticker-prices --only-active --stale-minutes=30 --limit=50')
+        ->everyMinute()
+        ->withoutOverlapping()
+        ->runInBackground();
 
-// Reativacao - cada 45 minutos (0min e 45min de cada hora)
-Schedule::command('app:reactivate-tickers --limit=100 --cooldown=45 --stale-minutes=120')
-    ->cron('0,45 * * * *')
-    ->withoutOverlapping()
-    ->runInBackground();
+    // Reativacao - cada 45 minutos (0min e 45min de cada hora)
+    Schedule::command('app:reactivate-tickers --limit=100 --cooldown=45 --stale-minutes=120')
+        ->cron('0,45 * * * *')
+        ->withoutOverlapping()
+        ->runInBackground();
 
-// Sync lista de ativos - segunda 04:00
-Schedule::command('app:sync-brapi-stock-list --limit=100 --pages=999')
-    ->cron('0 4 * * 1')
-    ->withoutOverlapping();
+    // Sync lista de ativos - segunda 04:00
+    Schedule::command('app:sync-brapi-stock-list --limit=100 --pages=999')
+        ->cron('0 4 * * 1')
+        ->withoutOverlapping();
 
-// Crawler dividendos FII - diario 08:30
-Schedule::command('app:crawl-fii-dividends --headless')
-    ->dailyAt('08:30')
-    ->withoutOverlapping();
+}
 ```
+
+> **Nota:** O wrapper `if (app()->environment('production'))` garante que os comandos só executam em produção. Em ambiente sandbox, o `schedule:work` roda mas não dispara nenhum comando.
 
 ---
 
 ## Fase 5 - Docker/Producao
 
-### 5.1 Dockerfile - Instalar Google Chrome for Testing (nao Chromium)
-
-Usar o canal oficial **Chrome for Testing** do Google (chrome-for-testing) que garante
-versoes pareadas de Chrome + ChromeDriver. O Chromium do apt tem problemas frequentes
-de incompatibilidade de versao com o ChromeDriver.
-
-Adicionar ao Dockerfile apos a instalacao de extensoes PHP:
-
-```dockerfile
-# Install Google Chrome for Testing (headless) + ChromeDriver pareado
-# Ref: https://googlechromelabs.github.io/chrome-for-testing/
-RUN apt-get update && apt-get install -y \
-    wget unzip jq \
-    # Dependencias do Chrome (libs graficas, fontes, etc)
-    libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
-    libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 \
-    libpango-1.0-0 libasound2 libxshmfence1 fonts-liberation \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Baixa Chrome + ChromeDriver stable pareados via JSON API
-RUN set -eux; \
-    JSON_URL="https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json"; \
-    CHROME_URL=$(wget -qO- "$JSON_URL" | jq -r '.channels.Stable.downloads.chrome[] | select(.platform=="linux64") | .url'); \
-    DRIVER_URL=$(wget -qO- "$JSON_URL" | jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="linux64") | .url'); \
-    wget -q "$CHROME_URL" -O /tmp/chrome.zip; \
-    wget -q "$DRIVER_URL" -O /tmp/chromedriver.zip; \
-    unzip -q /tmp/chrome.zip -d /opt/chrome/; \
-    unzip -q /tmp/chromedriver.zip -d /opt/chrome/; \
-    ln -sf /opt/chrome/chrome-linux64/chrome /usr/local/bin/google-chrome; \
-    ln -sf /opt/chrome/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver; \
-    chmod +x /opt/chrome/chrome-linux64/chrome /opt/chrome/chromedriver-linux64/chromedriver; \
-    rm -f /tmp/chrome.zip /tmp/chromedriver.zip
-
-# Variaveis de ambiente para Panther
-ENV PANTHER_CHROME_BINARY=/opt/chrome/chrome-linux64/chrome
-ENV PANTHER_CHROME_DRIVER_BINARY=/opt/chrome/chromedriver-linux64/chromedriver
-ENV PANTHER_NO_SANDBOX=1
-```
-
-**Por que Chrome for Testing e nao Chromium?**
-- Chrome for Testing garante que Chrome e ChromeDriver sao da **mesma versao** (evita `session not created: This version of ChromeDriver only supports Chrome version X`)
-- API JSON estavel para automacao de builds
-- Mesmo motor do Chrome que os usuarios usam (nao e um fork)
-- Suporte oficial do Google para automacao headless
-
-### 5.2 supervisord.conf
+### 5.1 supervisord.conf
 
 Adicionar `schedule-worker` (ja detalhado em 1.6):
 
@@ -645,21 +532,11 @@ stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
-autorestart=unexpected
-exitcodes=0
-startretries=0
+autorestart=true
+startretries=3
 ```
 
-### 5.3 .env.example
-
-```env
-# Panther / Chrome Headless (crawler de dividendos FII)
-# No container Docker os defaults do config/services.php ja apontam para /opt/chrome/
-# Sobrescrever apenas em ambiente local (ex: Windows com chromedriver em drivers/)
-PANTHER_CHROME_BINARY=/opt/chrome/chrome-linux64/chrome
-PANTHER_CHROME_DRIVER_BINARY=/opt/chrome/chromedriver-linux64/chromedriver
-PANTHER_NO_SANDBOX=true
-```
+> **Status:** Ja implementado e commitado.
 
 ---
 
@@ -677,10 +554,7 @@ php artisan app:update-mfinance-ticker-prices --only-active --limit=3 --force
 # 3. Sync Brapi (1 pagina)
 php artisan app:sync-brapi-stock-list --limit=10 --pages=1
 
-# 4. Crawler (1 FII)
-php artisan app:crawl-fii-dividends --ticker=MXRF11 --headless
-
-# 5. Listar schedule
+# 4. Listar schedule
 php artisan schedule:list
 ```
 
@@ -689,14 +563,13 @@ php artisan schedule:list
 - `company_tickers.last_price` e `last_price_updated` atualizados
 - `company_tickers.can_update` reativado
 - `company_closings` criados no ultimo dia util
-- `company_earnings` criados para FIIs
 - `api_credentials.request_counter` incrementando
 
 ---
 
 ## Inventario de Arquivos
 
-### Criar (17 arquivos)
+### Criar (14 arquivos)
 
 | # | Arquivo |
 |---|---------|
@@ -711,41 +584,35 @@ php artisan schedule:list
 | 9 | `app/Services/External/Brapi/StockListSynchronizer.php` |
 | 10 | `app/Services/External/MFinance/MFinanceService.php` |
 | 11 | `app/Services/External/MFinance/MFinanceTickerPriceUpdater.php` |
-| 12 | `app/Services/External/AlphaVantage/AlphaVantageService.php` |
-| 13 | `app/Services/External/AlphaVantage/TickerPriceUpdater.php` |
+| 12 | `app/Services/External/AlphaVantage/AlphaVantageService.php` (opcional) |
+| 13 | `app/Services/External/AlphaVantage/TickerPriceUpdater.php` (opcional) |
 | 14 | `app/Console/Commands/Tickers/ReactivateTickersCommand.php` |
 | 15 | `app/Console/Commands/MFinance/UpdateTickerPricesCommand.php` |
 | 16 | `app/Console/Commands/Brapi/SyncStockListCommand.php` |
-| 17 | `app/Console/Commands/Crawler/CrawlFiiDividendsCommand.php` |
 
-### Modificar (4 arquivos)
+### Modificar (2 arquivos)
 
 | # | Arquivo | Alteracao |
 |---|---------|-----------|
-| 1 | `app/Models/CompanyTicker.php` | +2 relationships (`closings`, `companyEarnings`) + import dos novos models |
-| 2 | `routes/console.php` | Substituir inspire por 4 schedules |
-| 3 | `composer.json` | +symfony/panther deps (via composer require) |
-| 4 | `config/services.php` | +panther config |
+| 1 | `app/Models/CompanyTicker.php` | +2 relationships (`closings`, `companyEarnings`) |
+| 2 | `routes/console.php` | Substituir inspire por 3 schedules (ja feito) |
 
 ---
 
 ## Ordem de implementacao
 
-| Passo | Descricao | Dependencia |
-|-------|-----------|-------------|
-| 1 | `composer require` (Panther) | - |
-| 2 | Models (4 novos + editar CompanyTicker) | - |
-| 3 | ApiResponse DTO + TradingHelper | - |
-| 4 | BrapiService + Brapi TickerPriceUpdater | Models, ApiResponse |
-| 5 | ReactivateTickersCommand (testar) | Models |
-| 6 | MFinanceService + MFinance TickerPriceUpdater | Models, ApiResponse, TradingHelper, BrapiTPU |
-| 7 | UpdateMFinanceTickerPricesCommand (testar) | MFinanceTPU, TradingHelper |
-| 8 | StockListSynchronizer + SyncStockListCommand (testar) | BrapiService, Models |
-| 9 | CrawlFiiDividendsCommand (testar) | Models, Panther |
-| 10 | AlphaVantage services (opcional) | Models, ApiResponse, BrapiTPU |
-| 11 | routes/console.php (scheduler) | Todos os commands |
-| 12 | config/services.php (panther) | - |
-| 13 | Docker updates (producao) | Tudo testado |
+| Passo | Descricao | Dependencia | Status |
+|-------|-----------|-------------|--------|
+| 1 | Models (4 novos + editar CompanyTicker) | - | Pendente |
+| 2 | ApiResponse DTO + TradingHelper | - | Pendente |
+| 3 | BrapiService + Brapi TickerPriceUpdater | Models, ApiResponse | Pendente |
+| 4 | ReactivateTickersCommand (testar) | Models | Pendente |
+| 5 | MFinanceService + MFinance TickerPriceUpdater | Models, ApiResponse, TradingHelper, BrapiTPU | Pendente |
+| 6 | UpdateMFinanceTickerPricesCommand (testar) | MFinanceTPU, TradingHelper | Pendente |
+| 7 | StockListSynchronizer + SyncStockListCommand (testar) | BrapiService, Models | Pendente |
+| 8 | AlphaVantage services (opcional) | Models, ApiResponse, BrapiTPU | Opcional |
+| 9 | routes/console.php (scheduler) | Todos os commands | **Feito** |
+| 10 | supervisord.conf (schedule-worker) | - | **Feito** |
 
 ---
 
@@ -755,28 +622,23 @@ php artisan schedule:list
 
 | Ponto | Risco | Mitigacao |
 |-------|-------|-----------|
-| **Chrome/ChromeDriver version mismatch** | Crawler falha com `session not created` apos rebuild da imagem | Usar Chrome for Testing (versoes pareadas via JSON API). Fixar versao no Dockerfile se necessario. |
-| **Investidor10 muda layout/selectors** | Crawler nao encontra `#table-dividends-history`, retorna 0 dividendos | Logar HTML da pagina em caso de 0 resultados. Monitorar `stats.failed` no log. Alerta se taxa de falha > 50%. |
 | **Rate limit das APIs externas** | Brapi/MFinance bloqueiam requests, `request_counter` estoura | `checkRateLimit()` ja implementado nos services. Respeitar `request_limit` da tabela `api_credentials`. |
 | **Banco compartilhado - dupla execucao** | Scheduler ativo no portfolio E no legado ao mesmo tempo = dados duplicados, race conditions | **Desativar no legado ANTES** de ativar no portfolio. Documentar procedimento. |
-| **schedule:work morre no container** | Supervisor nao reinicia `schedule-worker` corretamente | Configurar `autorestart=unexpected` no supervisord. Health check do container ja cobre PHP/Nginx mas nao o scheduler - adicionar log monitoring. |
-| **/dev/shm pequeno no container** | Chrome crasha com `DevToolsActivePort file doesn't exist` | Flag `--disable-dev-shm-usage` ja esta nos arguments do Panther. Verificar que Docker run nao limita shm_size. |
-| **Timeout no crawler** | FII com muitas paginas de dividendos trava > 30min | `withoutOverlapping()` no scheduler previne acumulo. Max 20 paginas hard-coded. Adicionar timeout global no Panther client. |
+| **schedule:work morre no container** | Supervisor nao reinicia `schedule-worker` corretamente | Configurar `autorestart=true` com `startretries=3` no supervisord (ja feito). |
 | **MFinance fora do ar** | Fallback para Brapi, mas Brapi tem plano free (1 req/vez) = lento | Ja implementado: `handleFallback()` delega para BrapiTickerPriceUpdater. Log de warning quando fallback e acionado. |
 | **Preco zerado/null desativa ticker permanentemente** | `can_update=0` sem mecanismo de recuperacao | `ReactivateTickersCommand` (cada 45min) reativa tickers apos cooldown. Ciclo: desativa -> cooldown -> reativa -> tenta novamente. |
-| **Imagem Docker muito grande** | Chrome for Testing adiciona ~400MB ao tamanho da imagem | Considerar multi-stage build ou container separado para crawler (futuro). |
+| **Ambiente sandbox executa scheduler** | Commands rodam em sandbox consumindo API desnecessariamente | Wrapper `if (app()->environment('production'))` em `routes/console.php` (ja feito). |
 
 ### Melhorias de arquitetura (futuro, nao bloqueia V8)
 
 | Melhoria | Descricao | Beneficio |
 |----------|-----------|-----------|
 | **Extrair query `getEligibleTickers()` para trait/scope** | MFinanceTPU e BrapiTPU tem a mesma query complexa duplicada | DRY, facilita manutencao. Possivel `scopeEligibleForPriceUpdate()` no CompanyTicker. |
-| **Container separado para crawler** | Rodar `app:crawl-fii-dividends` em container dedicado com Chrome, separado do PHP principal | Imagem principal menor, isolamento de memoria, nao compete com requests web. |
-| **Selenium Grid como servico** | Usar `selenium/standalone-chrome` como container separado. Adicionar `remote_driver_url` ao config e `.env` apontando para `http://selenium-chrome:4444`. | Chrome isolado, mais estavel, facilita scaling. Codigo do crawler ja suporta via `Client::createSeleniumClient()`. |
 | **Services como singletons registrados no container** | BrapiService e MFinanceService carregam credenciais no construtor (query no banco) - registrar como singleton evita queries repetidas | Performance: 1 query por request cycle ao inves de N. |
 | **Aderencia ao padrao de Services (docs/patterns/services.md)** | O padrao do portfolio define que Services devem: usar DI no construtor, retornar tipos explicitos, usar exceptions customizadas, usar DB::transaction para operacoes criticas | Os services legado ja seguem DI e transactions. Adicionar return types explicitos e considerar exceptions customizadas (ex: `ApiRateLimitException`, `TickerPriceUnavailableException`). |
 | **Logging estruturado** | Commands usam `Log::info/warning/error` sem contexto padronizado | Definir formato padrao de contexto: `['command' => ..., 'ticker' => ..., 'source' => ..., 'duration_ms' => ...]`. |
 | **Metricas de execucao** | Nao ha tracking de tempo de execucao nem taxa de sucesso por command | Possibilidade futura: tabela `job_execution_logs` ou integracao com monitoring externo. |
+| **API de dividendos FII** | Buscar API alternativa para dividendos de FIIs (crawler descontinuado) | Possibilidades: Brapi (pago), StatusInvest API, CVM dados abertos, ou B3 dados publicos. |
 
 ### Aderencia aos padroes do portfolio (docs/patterns/)
 
@@ -797,7 +659,7 @@ php artisan schedule:list
 - **Boolean casts:** CompanyTicker casta `can_update` como boolean - queries com `where('can_update', 0)` funcionam, mas comparacoes devem usar `!$ticker->can_update`
 - **CarbonImmutable:** Portfolio usa CarbonImmutable - `now()->subMinutes()` retorna nova instancia (ok, nao muta)
 - **Banco compartilhado:** Ao ativar scheduler no portfolio, **desativar no legado** para evitar duplicidade
-- **Rate limits:** Brapi free plan (1 ticker/request via chunk size 1), MFinance (tracked na tabela `api_credentials`), Crawler (2-5s entre FIIs)
+- **Rate limits:** Brapi free plan (1 ticker/request via chunk size 1), MFinance (tracked na tabela `api_credentials`)
 - **Relationships legado:** No legado a FK eh `company_ticker_id` (verificar se CompanyClosing e CompanyEarning usam `company_ticker_id` e nao `ticker_id`)
 - **EarningType table:** Nome da tabela eh `earning_type` (singular, nao `earning_types`)
 - **Company relationships:** O CompanyTicker no portfolio ja tem `company()` com eager loading de `companyCategory` - os services precisam de `company.companyCategory.coin` para queries
