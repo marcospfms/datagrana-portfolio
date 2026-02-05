@@ -181,19 +181,19 @@ class ConsolidatedController extends BaseController
             ];
         })->values();
 
-        $byAccount = $consolidated->groupBy('account_id')->map(function ($items) {
-            $account = $items->first()->account;
-            $bank = $account->bank;
-            $invested = $items->sum('total_purchased');
-            $current = $items->sum('balance');
+        $allAccounts = $request->user()->accounts()->with('bank')->get();
+        $byAccount = $allAccounts->map(function ($account) use ($consolidated) {
+            $accountPositions = $consolidated->where('account_id', $account->id);
+            $invested = $accountPositions->sum('total_purchased');
+            $current = $accountPositions->sum('balance');
             $profit = $current - $invested;
 
             return [
                 'account_id' => $account->id,
                 'account_name' => $account->nickname ?? $account->account,
-                'bank' => $bank?->nickname ?? $bank?->name,
-                'bank_photo' => $bank?->photo ? trim($bank->photo) : null,
-                'count' => $items->count(),
+                'bank' => $account->bank?->nickname ?? $account->bank?->name,
+                'bank_photo' => $account->bank?->photo ? trim($account->bank->photo) : null,
+                'count' => $accountPositions->count(),
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
                 'profit' => round($profit, 2),
