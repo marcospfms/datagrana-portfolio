@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/consolidated/summary', [ConsolidatedController::class, 'summary'])->name('consolidated.summary');
     Route::get('/consolidated', [ConsolidatedController::class, 'index'])->name('consolidated.index');
     Route::get('/consolidated/{consolidated}', [ConsolidatedController::class, 'show'])->name('consolidated.show');
+    Route::delete('/consolidated/{consolidated}', [ConsolidatedController::class, 'destroy'])->name('consolidated.destroy');
 
     Route::post('/consolidated/transactions', [ConsolidatedTransactionController::class, 'store'])
         ->name('consolidated.transactions.store');

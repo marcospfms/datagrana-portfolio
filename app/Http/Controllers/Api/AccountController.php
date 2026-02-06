@@ -89,7 +89,6 @@ class AccountController extends BaseController
     public function destroy(Account $account, SubscriptionLimitService $limitService): JsonResponse
     {
         $this->authorize('delete', $account);
-        $limitService->ensureCanEditAccount(auth()->user(), $account);
 
         if ($account->hasActivePositions()) {
             return $this->sendError(

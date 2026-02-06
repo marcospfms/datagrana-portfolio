@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | VIP Emails
+    |--------------------------------------------------------------------------
+    |
+    | List of emails that automatically receive lifetime premium subscription.
+    | These users bypass subscription limits and payment requirements.
+    |
+    */
+
+    'vip_emails' => array_filter(array_map('trim', explode(';', env('VIP_EMAILS', '')))),
+
 ];

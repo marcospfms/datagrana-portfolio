@@ -7,6 +7,7 @@ use App\Models\Consolidated;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ConsolidatedController extends BaseController
 {
@@ -135,6 +136,21 @@ class ConsolidatedController extends BaseController
         $payload['transactions'] = $paginated;
 
         return $this->sendResponse($payload);
+    }
+
+    public function destroy(Consolidated $consolidated): JsonResponse
+    {
+        $this->authorize('delete', $consolidated);
+
+        DB::transaction(function () use ($consolidated) {
+            $consolidated->companyTransactions()->delete();
+            $consolidated->treasureTransactions()->delete();
+            $consolidated->earnings()->delete();
+            $consolidated->userNetBalances()->delete();
+            $consolidated->delete();
+        });
+
+        return $this->sendResponse([], 'Posição removida com sucesso.');
     }
 
     public function summary(Request $request): JsonResponse

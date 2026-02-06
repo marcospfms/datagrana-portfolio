@@ -272,6 +272,21 @@ class SubscriptionLimitService
 
     public function ensureUserHasSubscription(User $user): UserSubscription
     {
+        // Check if user is VIP and needs lifetime premium
+        if ($this->isVipUser($user)) {
+            $lifetimePremium = $user->subscriptions()
+                ->where('plan_slug', 'premium')
+                ->whereNull('ends_at')
+                ->active()
+                ->first();
+
+            if (!$lifetimePremium) {
+                return $this->createLifetimePremiumSubscription($user);
+            }
+
+            return $lifetimePremium;
+        }
+
         $subscription = $user->subscriptions()
             ->active()
             ->orderByDesc('is_paid')
@@ -407,5 +422,46 @@ class SubscriptionLimitService
             ->limit((int) $limit)
             ->pluck('id')
             ->all();
+    }
+
+    private function isVipUser(User $user): bool
+    {
+        $vipEmails = config('app.vip_emails', []);
+        return in_array($user->email, $vipEmails, true);
+    }
+
+    private function createLifetimePremiumSubscription(User $user): UserSubscription
+    {
+        $premiumPlan = SubscriptionPlan::where('slug', 'premium')
+            ->with('configs')
+            ->firstOrFail();
+
+        // Cancel any existing active subscriptions
+        $user->subscriptions()
+            ->active()
+            ->update([
+                'status' => 'canceled',
+                'canceled_at' => now(),
+                'ends_at' => now(),
+            ]);
+
+        $subscription = UserSubscription::create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $premiumPlan->id,
+            'plan_name' => $premiumPlan->name,
+            'plan_slug' => $premiumPlan->slug,
+            'price_monthly' => 0, // Free for VIP
+            'limits_snapshot' => $premiumPlan->getLimitsArray(),
+            'features_snapshot' => $premiumPlan->getFeaturesArray(),
+            'status' => 'active',
+            'starts_at' => now(),
+            'ends_at' => null, // Lifetime (never expires)
+            'is_paid' => true, // Premium but free for VIP
+            'revenuecat_transaction_id' => 'vip_lifetime',
+        ]);
+
+        $this->getOrCreateUsage($user, $subscription);
+
+        return $subscription;
     }
 }
