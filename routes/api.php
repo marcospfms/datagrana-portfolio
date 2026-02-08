@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories', [AssetController::class, 'categories'])->name('categories');
         Route::get('/', [AssetController::class, 'search'])->name('search');
         Route::get('/popular', [AssetController::class, 'popular'])->name('popular');
+        Route::get('/quick', [AssetController::class, 'quick'])->name('quick');
         Route::get('/{companyTicker}', [AssetController::class, 'show'])->name('show');
     });
 
