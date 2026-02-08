@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CompanyEarning extends Model
 {
@@ -40,5 +41,10 @@ class CompanyEarning extends Model
     public function earningType(): BelongsTo
     {
         return $this->belongsTo(EarningType::class);
+    }
+
+    public function earnings(): HasMany
+    {
+        return $this->hasMany(Earning::class);
     }
 }

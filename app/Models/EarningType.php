@@ -25,4 +25,9 @@ class EarningType extends Model
     {
         return $this->hasMany(CompanyEarning::class);
     }
+
+    public function earnings(): HasMany
+    {
+        return $this->hasMany(Earning::class);
+    }
 }
