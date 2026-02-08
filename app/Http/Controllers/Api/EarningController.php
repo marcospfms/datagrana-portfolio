@@ -16,8 +16,7 @@ class EarningController extends BaseController
     {
         $query = Earning::query()
             ->whereHas('consolidated.account', fn ($q) => $q->where('user_id', $request->user()->id))
-            ->with(['earningType', 'consolidated.companyTicker.company.category', 'consolidated.account.bank'])
-            ->orderByDesc('date');
+            ->with(['earningType', 'consolidated.companyTicker.company.category', 'consolidated.treasure.treasureCategory', 'consolidated.account.bank']);
 
         if ($request->filled('consolidated_id')) {
             $query->where('consolidated_id', $request->integer('consolidated_id'));
@@ -44,7 +43,33 @@ class EarningController extends BaseController
 
         $earnings = $query->get();
 
-        return $this->sendResponse(EarningResource::collection($earnings));
+        $sorted = $earnings->sort(function (Earning $a, Earning $b) {
+            $dateA = $a->date?->toDateString() ?? '';
+            $dateB = $b->date?->toDateString() ?? '';
+
+            if ($dateA !== $dateB) {
+                return $dateA < $dateB ? 1 : -1;
+            }
+
+            $codeA = $a->consolidated?->companyTicker?->code
+                ?? $a->consolidated?->treasure?->code
+                ?? '';
+            $codeB = $b->consolidated?->companyTicker?->code
+                ?? $b->consolidated?->treasure?->code
+                ?? '';
+
+            return strcmp($codeA, $codeB);
+        })->values();
+
+        $grouped = $sorted
+            ->groupBy(fn (Earning $earning) => $earning->date?->toDateString() ?? '0000-00-00')
+            ->map(fn ($items, $date) => [
+                'date' => $date,
+                'data' => EarningResource::collection($items)->values(),
+            ])
+            ->values();
+
+        return $this->sendResponse($grouped);
     }
 
     public function store(StoreEarningRequest $request): JsonResponse
