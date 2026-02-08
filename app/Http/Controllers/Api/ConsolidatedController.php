@@ -134,8 +134,34 @@ class ConsolidatedController extends BaseController
             ]
         );
 
+        $grouped = collect($paginated->items())
+            ->groupBy(function ($item) {
+                $date = $item['date'] ?? null;
+                return $date ? substr($date, 0, 10) : '0000-00-00';
+            })
+            ->map(fn ($items, $date) => [
+                'date' => $date,
+                'data' => array_values($items),
+            ])
+            ->values()
+            ->all();
+
         $payload = (new ConsolidatedResource($consolidated))->resolve();
-        $payload['transactions'] = $paginated;
+        $payload['transactions'] = [
+            'data' => $grouped,
+            'links' => [
+                'first' => $paginated->url(1),
+                'last' => $paginated->url($paginated->lastPage()),
+                'prev' => $paginated->previousPageUrl(),
+                'next' => $paginated->nextPageUrl(),
+            ],
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ];
 
         return $this->sendResponse($payload);
     }
