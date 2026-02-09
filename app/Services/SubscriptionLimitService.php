@@ -266,8 +266,21 @@ class SubscriptionLimitService
     public function updateUsage(User $user): void
     {
         $subscription = $this->getActiveSubscription($user);
+        $this->ensureUsageForSubscription($user, $subscription, true);
+    }
+
+    public function ensureUsageForSubscription(
+        User $user,
+        UserSubscription $subscription,
+        bool $recalculate = true
+    ): UserSubscriptionUsage {
         $usage = $this->getOrCreateUsage($user, $subscription);
-        $usage->recalculate();
+
+        if ($recalculate) {
+            $usage->recalculate();
+        }
+
+        return $usage;
     }
 
     public function ensureUserHasSubscription(User $user): UserSubscription
