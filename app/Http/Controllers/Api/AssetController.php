@@ -63,6 +63,7 @@ class AssetController extends BaseController
 
         $recentTickerIds = Consolidated::whereIn('account_id', $accountIds)
             ->open()
+            ->where('quantity_current', '>', 0)
             ->whereNotNull('company_ticker_id')
             ->orderByDesc('updated_at')
             ->get(['company_ticker_id'])
