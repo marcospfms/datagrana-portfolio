@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\RevenueCatWebhookController;
 use App\Http\Controllers\Api\SubscriptionPlanController;
 use App\Http\Controllers\Api\UserSubscriptionController;
+use App\Http\Controllers\Api\EarningController;
+use App\Http\Controllers\Api\EarningTypeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +48,11 @@ Route::prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/earning-types', [EarningTypeController::class, 'index'])->name('earning-types.index');
+    Route::get('/earnings/summary', [EarningController::class, 'summary'])->name('earnings.summary');
+    Route::get('/earnings/grouped', [EarningController::class, 'grouped'])->name('earnings.grouped');
+    Route::apiResource('earnings', EarningController::class);
+
     Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
     Route::get('/subscription-plans/{plan}', [SubscriptionPlanController::class, 'show'])->name('subscription-plans.show');
     Route::get('/subscription/current', [UserSubscriptionController::class, 'current'])->name('subscription.current');
@@ -60,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories', [AssetController::class, 'categories'])->name('categories');
         Route::get('/', [AssetController::class, 'search'])->name('search');
         Route::get('/popular', [AssetController::class, 'popular'])->name('popular');
+        Route::get('/quick', [AssetController::class, 'quick'])->name('quick');
         Route::get('/{companyTicker}', [AssetController::class, 'show'])->name('show');
     });
 

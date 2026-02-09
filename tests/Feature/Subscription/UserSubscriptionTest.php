@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Subscription;
 
+use App\Models\Account;
+use App\Models\Composition;
+use App\Models\Portfolio;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Models\UserSubscription;
@@ -99,6 +102,65 @@ class UserSubscriptionTest extends TestCase
             'plan_slug' => 'free',
             'status' => 'active',
         ]);
+    }
+
+    public function test_current_subscription_recalculates_usage_and_relinks_to_active_subscription(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $user = $auth['user'];
+
+        UserSubscriptionUsage::where('user_id', $user->id)->delete();
+        UserSubscription::where('user_id', $user->id)->delete();
+
+        $freePlan = SubscriptionPlan::where('slug', 'free')->firstOrFail();
+        $starterPlan = SubscriptionPlan::where('slug', 'starter')->firstOrFail();
+
+        $oldSubscription = UserSubscription::factory()->create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $freePlan->id,
+            'plan_name' => 'Gratuito',
+            'plan_slug' => 'free',
+            'status' => 'canceled',
+            'is_paid' => false,
+            'starts_at' => now()->subMonths(2),
+            'ends_at' => now()->subMonth(),
+        ]);
+
+        $activeSubscription = UserSubscription::factory()->create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $starterPlan->id,
+            'plan_name' => 'Starter',
+            'plan_slug' => 'starter',
+            'status' => 'active',
+            'is_paid' => true,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addMonth(),
+        ]);
+
+        UserSubscriptionUsage::create([
+            'user_id' => $user->id,
+            'user_subscription_id' => $oldSubscription->id,
+            'current_portfolios' => 0,
+            'current_compositions' => 0,
+            'current_positions' => 0,
+            'current_accounts' => 0,
+            'last_calculated_at' => now(),
+        ]);
+
+        $account = Account::factory()->create(['user_id' => $user->id]);
+        $portfolio = Portfolio::factory()->forUser($user)->create();
+        Composition::factory()->forPortfolio($portfolio)->create();
+
+        $response = $this->getJson('/api/subscription/current', $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.plan.slug', 'starter')
+            ->assertJsonPath('data.usage.current_accounts', 1)
+            ->assertJsonPath('data.usage.current_portfolios', 1)
+            ->assertJsonPath('data.usage.current_compositions', 1);
+
+        $usage = UserSubscriptionUsage::where('user_id', $user->id)->firstOrFail();
+        $this->assertEquals($activeSubscription->id, $usage->user_subscription_id);
     }
 
     public function test_has_had_paid_plan_is_true_when_user_had_paid_subscription(): void

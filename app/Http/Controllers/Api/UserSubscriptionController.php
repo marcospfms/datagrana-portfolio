@@ -28,8 +28,11 @@ class UserSubscriptionController extends BaseController
 
         if (!$subscription) {
             $subscription = $this->limitService->createFreeSubscription($user);
-            $subscription->load('usage');
         }
+
+        // Garante que o usage esteja vinculado à assinatura ativa atual e recalculado.
+        $this->limitService->ensureUsageForSubscription($user, $subscription, true);
+        $subscription->load('usage');
 
         $hasHadPaidPlan = $user->subscriptions()
             ->where('is_paid', true)

@@ -33,6 +33,7 @@ class ConsolidatedResource extends JsonResource
             'net_balance' => (string) $this->net_balance,
             'profit' => (string) $this->profit,
             'profit_percentage' => (string) $this->profit_percentage,
+            'earnings_total' => $this->earnings_total !== null ? (string) $this->earnings_total : null,
             'is_locked' => $isLocked,
             'account' => new AccountResource($this->whenLoaded('account')),
             'company_ticker' => new CompanyTickerResource($this->whenLoaded('companyTicker')),

@@ -140,6 +140,7 @@ class Consolidated extends Model
         );
     }
 
+
     public function scopeOpen($query)
     {
         return $query->where('closed', false);

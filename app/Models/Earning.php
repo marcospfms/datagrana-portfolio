@@ -39,4 +39,14 @@ class Earning extends Model
     {
         return $this->belongsTo(Consolidated::class);
     }
+
+    public function earningType(): BelongsTo
+    {
+        return $this->belongsTo(EarningType::class);
+    }
+
+    public function companyEarning(): BelongsTo
+    {
+        return $this->belongsTo(CompanyEarning::class);
+    }
 }
