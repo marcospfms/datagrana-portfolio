@@ -40,10 +40,47 @@ class EarningIndexTest extends TestCase
         $response = $this->getJson('/api/earnings', $this->authHeaders($auth['token']));
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.date', '2026-02-05')
-            ->assertJsonPath('data.0.data.0.consolidated.company_ticker.code', 'AAAA3')
-            ->assertJsonPath('data.0.data.1.consolidated.company_ticker.code', 'BBBB4');
+            ->assertJsonCount(2, 'data.data')
+            ->assertJsonPath('data.data.0.date', '2026-02-05')
+            ->assertJsonPath('data.data.0.data.0.consolidated.company_ticker.code', 'AAAA3')
+            ->assertJsonPath('data.data.0.data.1.consolidated.company_ticker.code', 'BBBB4')
+            ->assertJsonPath('data.meta.per_page', 5);
+    }
+
+    public function test_earnings_are_paginated_by_date_groups_with_five_dates_per_page(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $category = CompanyCategory::factory()->create();
+        $company = Company::factory()->create(['company_category_id' => $category->id]);
+        $ticker = CompanyTicker::factory()->create([
+            'company_id' => $company->id,
+            'code' => 'PAGI3',
+        ]);
+        $consolidated = Consolidated::factory()->forAccount($account)->forTicker($ticker)->create();
+
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-06']);
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-05']);
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-04']);
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-03']);
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-02']);
+        Earning::factory()->forConsolidated($consolidated)->create(['date' => '2026-02-01']);
+
+        $firstPage = $this->getJson('/api/earnings?page=1', $this->authHeaders($auth['token']));
+        $firstPage->assertStatus(200)
+            ->assertJsonPath('data.meta.current_page', 1)
+            ->assertJsonPath('data.meta.last_page', 2)
+            ->assertJsonPath('data.meta.per_page', 5)
+            ->assertJsonPath('data.meta.total', 6)
+            ->assertJsonCount(5, 'data.data')
+            ->assertJsonPath('data.data.0.date', '2026-02-06')
+            ->assertJsonPath('data.data.4.date', '2026-02-02');
+
+        $secondPage = $this->getJson('/api/earnings?page=2', $this->authHeaders($auth['token']));
+        $secondPage->assertStatus(200)
+            ->assertJsonPath('data.meta.current_page', 2)
+            ->assertJsonCount(1, 'data.data')
+            ->assertJsonPath('data.data.0.date', '2026-02-01');
     }
 
     public function test_cannot_list_earnings_without_authentication(): void

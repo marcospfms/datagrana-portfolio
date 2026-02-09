@@ -14,6 +14,8 @@ class EarningController extends BaseController
 {
     public function index(Request $request): JsonResponse
     {
+        $perPage = 5; // Paginação por grupos de data
+
         $query = Earning::query()
             ->whereHas('consolidated.account', fn ($q) => $q->where('user_id', $request->user()->id))
             ->with(['earningType', 'consolidated.companyTicker.company.category', 'consolidated.treasure.treasureCategory', 'consolidated.account.bank']);
@@ -41,35 +43,80 @@ class EarningController extends BaseController
             });
         }
 
-        $earnings = $query->get();
+        $dateGroups = (clone $query)
+            ->selectRaw('DATE(date) as earning_date')
+            ->groupBy('earning_date')
+            ->orderBy('earning_date', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
 
-        $sorted = $earnings->sort(function (Earning $a, Earning $b) {
-            $dateA = $a->date?->toDateString() ?? '';
-            $dateB = $b->date?->toDateString() ?? '';
+        $dates = collect($dateGroups->items())
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return $item['earning_date'] ?? null;
+                }
 
-            if ($dateA !== $dateB) {
-                return $dateA < $dateB ? 1 : -1;
-            }
-
-            $codeA = $a->consolidated?->companyTicker?->code
-                ?? $a->consolidated?->treasure?->code
-                ?? '';
-            $codeB = $b->consolidated?->companyTicker?->code
-                ?? $b->consolidated?->treasure?->code
-                ?? '';
-
-            return strcmp($codeA, $codeB);
-        })->values();
-
-        $grouped = $sorted
-            ->groupBy(fn (Earning $earning) => $earning->date?->toDateString() ?? '0000-00-00')
-            ->map(fn ($items, $date) => [
-                'date' => $date,
-                'data' => EarningResource::collection($items)->values(),
-            ])
+                return $item->earning_date ?? null;
+            })
+            ->filter()
             ->values();
 
-        return $this->sendResponse($grouped);
+        $grouped = collect();
+
+        if ($dates->isNotEmpty()) {
+            $earningsByPageDates = (clone $query)
+                ->where(function ($builder) use ($dates) {
+                    foreach ($dates as $date) {
+                        $builder->orWhereDate('date', $date);
+                    }
+                })
+                ->get();
+
+            $sorted = $earningsByPageDates->sort(function (Earning $a, Earning $b) {
+                $dateA = $a->date?->toDateString() ?? '';
+                $dateB = $b->date?->toDateString() ?? '';
+
+                if ($dateA !== $dateB) {
+                    return $dateA < $dateB ? 1 : -1;
+                }
+
+                $codeA = $a->consolidated?->companyTicker?->code
+                    ?? $a->consolidated?->treasure?->code
+                    ?? '';
+                $codeB = $b->consolidated?->companyTicker?->code
+                    ?? $b->consolidated?->treasure?->code
+                    ?? '';
+
+                return strcmp($codeA, $codeB);
+            })->values();
+
+            $groupedMap = $sorted
+                ->groupBy(fn (Earning $earning) => $earning->date?->toDateString() ?? '0000-00-00')
+                ->map(fn ($items, $date) => [
+                    'date' => $date,
+                    'data' => EarningResource::collection($items)->values(),
+                ]);
+
+            $grouped = $dates
+                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'data' => []]))
+                ->values();
+        }
+
+        return $this->sendResponse([
+            'data' => $grouped,
+            'links' => [
+                'first' => $dateGroups->url(1),
+                'last' => $dateGroups->url($dateGroups->lastPage()),
+                'prev' => $dateGroups->previousPageUrl(),
+                'next' => $dateGroups->nextPageUrl(),
+            ],
+            'meta' => [
+                'current_page' => $dateGroups->currentPage(),
+                'last_page' => $dateGroups->lastPage(),
+                'per_page' => $dateGroups->perPage(),
+                'total' => $dateGroups->total(),
+            ],
+        ]);
     }
 
     public function store(StoreEarningRequest $request): JsonResponse
