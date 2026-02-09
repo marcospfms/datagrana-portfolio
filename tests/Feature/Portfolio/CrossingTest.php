@@ -9,6 +9,7 @@ use App\Models\CompanyTicker;
 use App\Models\Composition;
 use App\Models\CompositionHistory;
 use App\Models\Consolidated;
+use App\Models\Earning;
 use App\Models\Portfolio;
 use App\Models\Treasure;
 use App\Models\TreasureCategory;
@@ -309,6 +310,56 @@ class CrossingTest extends TestCase
         $crossingItem = $response->json('data.crossing.0');
         $this->assertEquals('treasure', $crossingItem['type']);
         $this->assertEquals(10.00, $crossingItem['ideal_percentage']);
+    }
+
+    public function test_crossing_returns_dividend_received_from_earnings(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $this->enableFullCrossing($auth);
+        $account = Account::factory()->create(['user_id' => $auth['user']->id]);
+        $category = CompanyCategory::factory()->create(['reference' => 'Acoes']);
+        $company = Company::factory()->create(['company_category_id' => $category->id]);
+        $ticker = CompanyTicker::factory()->create([
+            'company_id' => $company->id,
+            'code' => 'ITSA4',
+            'last_price' => 11.50,
+        ]);
+
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create([
+            'target_value' => 5000.00,
+        ]);
+
+        Composition::factory()->forPortfolio($portfolio)->create([
+            'company_ticker_id' => $ticker->id,
+            'percentage' => 20.00,
+        ]);
+
+        $consolidated = Consolidated::factory()->create([
+            'account_id' => $account->id,
+            'company_ticker_id' => $ticker->id,
+            'quantity_current' => 100,
+            'average_purchase_price' => 10.00,
+            'total_purchased' => 1000.00,
+            'closed' => false,
+        ]);
+
+        Earning::factory()->forConsolidated($consolidated)->create([
+            'net_value' => 17.35,
+        ]);
+
+        Earning::factory()->forConsolidated($consolidated)->create([
+            'net_value' => 2.65,
+        ]);
+
+        $response = $this->getJson(
+            "/api/portfolios/{$portfolio->id}/crossing",
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200);
+
+        $crossingItem = $response->json('data.crossing.0');
+        $this->assertEquals(20.0, (float) $crossingItem['dividend_received']);
     }
 
     public function test_cannot_get_crossing_for_other_user_portfolio(): void
