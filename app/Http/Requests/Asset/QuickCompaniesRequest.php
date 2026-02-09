@@ -13,8 +13,6 @@ class QuickCompaniesRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
-        ];
+        return [];
     }
 }
