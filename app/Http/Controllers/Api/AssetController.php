@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Resources\CompanyCategoryResource;
+use App\Http\Resources\CompanyTickerQuickResource;
 use App\Http\Resources\CompanyTickerResource;
 use App\Http\Requests\Asset\QuickCompaniesRequest;
 use App\Models\CompanyCategory;
@@ -58,17 +59,16 @@ class AssetController extends BaseController
 
     public function quick(QuickCompaniesRequest $request): JsonResponse
     {
-        $limit = $request->integer('limit', 10);
         $accountIds = $request->user()->accounts()->pluck('id');
 
         $recentTickerIds = Consolidated::whereIn('account_id', $accountIds)
             ->open()
+            ->where('quantity_current', '>', 0)
             ->whereNotNull('company_ticker_id')
             ->orderByDesc('updated_at')
             ->get(['company_ticker_id'])
             ->pluck('company_ticker_id')
             ->unique()
-            ->take($limit)
             ->values();
 
         if ($recentTickerIds->isEmpty()) {
@@ -87,7 +87,7 @@ class AssetController extends BaseController
             ->filter()
             ->values();
 
-        return $this->sendResponse(CompanyTickerResource::collection($sorted));
+        return $this->sendResponse(CompanyTickerQuickResource::collection($sorted));
     }
 
     public function show(CompanyTicker $companyTicker): JsonResponse
