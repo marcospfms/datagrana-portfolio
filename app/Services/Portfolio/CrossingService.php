@@ -42,6 +42,7 @@ class CrossingService
                 'treasure.treasureCategory',
                 'companyTicker.company.companyCategory',
             ])
+            ->withSum('earnings as dividend_received', 'net_value')
             ->get()
             ->sortBy(function ($composition) {
                 if ($composition->treasure_id) {
