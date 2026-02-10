@@ -63,6 +63,63 @@ class CompositionStoreTest extends TestCase
         ]);
     }
 
+    public function test_can_add_single_company_with_shorthand_payload(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create();
+        $ticker = CompanyTicker::factory()->create();
+
+        $response = $this->postJson("/api/portfolios/{$portfolio->id}/compositions", [
+            'company_ticker_id' => $ticker->id,
+            'percentage' => 33.3,
+        ], $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Composicoes adicionadas com sucesso.',
+            ]);
+
+        $this->assertDatabaseHas('compositions', [
+            'portfolio_id' => $portfolio->id,
+            'company_ticker_id' => $ticker->id,
+            'percentage' => 33.3,
+        ]);
+    }
+
+    public function test_can_add_multiple_companies_with_ticker_percentage_map(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $portfolio = Portfolio::factory()->forUser($auth['user'])->create();
+        $tickerA = CompanyTicker::factory()->create(['code' => 'ABCD3']);
+        $tickerB = CompanyTicker::factory()->create(['code' => 'WXYZ4']);
+
+        $response = $this->postJson("/api/portfolios/{$portfolio->id}/compositions", [
+            'ticker_percentages' => [
+                'ABCD3' => 40,
+                'WXYZ4' => 60,
+            ],
+        ], $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Composicoes adicionadas com sucesso.',
+            ]);
+
+        $this->assertDatabaseHas('compositions', [
+            'portfolio_id' => $portfolio->id,
+            'company_ticker_id' => $tickerA->id,
+            'percentage' => 40,
+        ]);
+
+        $this->assertDatabaseHas('compositions', [
+            'portfolio_id' => $portfolio->id,
+            'company_ticker_id' => $tickerB->id,
+            'percentage' => 60,
+        ]);
+    }
+
     public function test_cannot_add_to_other_user_portfolio(): void
     {
         $auth = $this->createAuthenticatedUser();

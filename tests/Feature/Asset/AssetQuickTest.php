@@ -34,6 +34,10 @@ class AssetQuickTest extends TestCase
             'company_id' => $company->id,
             'code' => 'CLOSE4',
         ]);
+        $zeroQtyTicker = CompanyTicker::factory()->create([
+            'company_id' => $company->id,
+            'code' => 'ZERO4',
+        ]);
 
         Consolidated::factory()
             ->forAccount($account)
@@ -51,6 +55,15 @@ class AssetQuickTest extends TestCase
             ->forAccount($account)
             ->forTicker($closedTicker)
             ->closed()
+            ->create();
+
+        Consolidated::factory()
+            ->forAccount($account)
+            ->forTicker($zeroQtyTicker)
+            ->state([
+                'closed' => false,
+                'quantity_current' => 0,
+            ])
             ->create();
 
         $otherUser = Account::factory()->create();
@@ -73,6 +86,7 @@ class AssetQuickTest extends TestCase
 
         $codes = collect($response->json('data'))->pluck('code')->all();
         $this->assertNotContains('CLOSE4', $codes);
+        $this->assertNotContains('ZERO4', $codes);
         $this->assertNotContains('OTHER4', $codes);
     }
 

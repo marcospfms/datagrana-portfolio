@@ -89,4 +89,17 @@ class EarningIndexTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_index_validates_search_param(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+
+        $response = $this->getJson(
+            '/api/earnings?search=' . str_repeat('A', 101),
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['search']);
+    }
 }

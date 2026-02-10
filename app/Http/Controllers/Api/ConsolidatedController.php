@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\ConsolidatedClosedResource;
 use App\Http\Resources\ConsolidatedResource;
 use App\Models\Consolidated;
 use App\Services\SubscriptionLimitService;
@@ -11,15 +12,57 @@ use Illuminate\Support\Facades\DB;
 
 class ConsolidatedController extends BaseController
 {
-    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
+    public function closed(Request $request): JsonResponse
     {
         $request->validate([
-            'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            'closed' => ['nullable', 'boolean'],
             'search' => ['nullable', 'string', 'min:1', 'max:100'],
         ]);
 
-        $accountIds = $request->user()->accounts()->pluck('id');
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
+        $perPage = 10;
+        $baseQuery = Consolidated::whereIn('account_id', $accountIds)->closed();
+        $totalClosed = (clone $baseQuery)->count();
+
+        $consolidated = (clone $baseQuery)
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search');
+
+                $query->where(function ($filterQuery) use ($search) {
+                    $filterQuery->whereHas('companyTicker.company', function ($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('nickname', 'like', "%{$search}%");
+                    })
+                        ->orWhereHas('companyTicker', function ($tickerQuery) use ($search) {
+                            $tickerQuery->where('code', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->with([
+                'companyTicker.company.companyCategory',
+                'account.bank',
+            ])
+            ->withSum('earnings as earnings_total', 'net_value')
+            ->orderBy('closed', 'asc')
+            ->orderByRaw('CASE WHEN treasure_id IS NOT NULL THEN (SELECT code FROM treasures WHERE id = treasure_id) END ASC')
+            ->orderByRaw('CASE WHEN company_ticker_id IS NOT NULL THEN (SELECT code FROM company_tickers WHERE id = company_ticker_id) END ASC')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $response = ConsolidatedClosedResource::collection($consolidated)->response();
+        $payload = $response->getData(true);
+        $payload['meta']['total_closed'] = $totalClosed;
+        $response->setData($payload);
+
+        return $response;
+    }
+
+    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
+    {
+        $request->validate([
+            'search' => ['nullable', 'string', 'min:1', 'max:100'],
+        ]);
+
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
         $perPage = 10;
         $subscription = $limitService->ensureUserHasSubscription($request->user());
         $maxPositions = $subscription->getLimit('max_positions');
@@ -37,12 +80,7 @@ class ConsolidatedController extends BaseController
         $request->attributes->set('allowed_position_ids', $allowedIds);
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
-            ->when($request->account_id, fn ($query, $accountId) =>
-                $query->where('account_id', $accountId)
-            )
-            ->when($request->has('closed'), fn ($query) =>
-                $query->where('closed', $request->boolean('closed'))
-            )
+            ->open()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search');
 
@@ -141,7 +179,7 @@ class ConsolidatedController extends BaseController
             })
             ->map(fn ($items, $date) => [
                 'date' => $date,
-                'data' => array_values($items),
+                'data' => array_values($items->all()),
             ])
             ->values()
             ->all();
@@ -183,7 +221,7 @@ class ConsolidatedController extends BaseController
 
     public function summary(Request $request): JsonResponse
     {
-        $accountIds = $request->user()->accounts()->pluck('id');
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->open()
@@ -192,11 +230,13 @@ class ConsolidatedController extends BaseController
                 'treasure.treasureCategory',
                 'account.bank',
             ])
+            ->withSum('earnings as earnings_total', 'net_value')
             ->get();
 
         $totalInvested = $consolidated->sum('total_purchased');
         $totalCurrent = $consolidated->sum('balance');
         $totalProfit = $totalCurrent - $totalInvested;
+        $totalEarnings = $consolidated->sum('earnings_total');
         $profitPercentage = $totalInvested > 0 ? ($totalProfit / $totalInvested) * 100 : 0;
 
         $byCategory = $consolidated->groupBy(function ($item) {
@@ -207,6 +247,7 @@ class ConsolidatedController extends BaseController
             $invested = $items->sum('total_purchased');
             $current = $items->sum('balance');
             $profit = $current - $invested;
+            $earnings = $items->sum('earnings_total');
             $first = $items->first();
             $category = $first?->companyTicker?->company?->companyCategory
                 ?? $first?->treasure?->treasureCategory;
@@ -221,6 +262,7 @@ class ConsolidatedController extends BaseController
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
                 'profit' => round($profit, 2),
+                'earnings' => round($earnings, 2),
                 'profit_percentage' => $invested > 0 ? round(($profit / $invested) * 100, 2) : 0,
             ];
         })->values();
@@ -231,6 +273,7 @@ class ConsolidatedController extends BaseController
             $invested = $accountPositions->sum('total_purchased');
             $current = $accountPositions->sum('balance');
             $profit = $current - $invested;
+            $earnings = $accountPositions->sum('earnings_total');
 
             return [
                 'account_id' => $account->id,
@@ -241,6 +284,7 @@ class ConsolidatedController extends BaseController
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
                 'profit' => round($profit, 2),
+                'earnings' => round($earnings, 2),
                 'profit_percentage' => $invested > 0 ? round(($profit / $invested) * 100, 2) : 0,
             ];
         })->values();
@@ -249,6 +293,7 @@ class ConsolidatedController extends BaseController
             'total_invested' => round($totalInvested, 2),
             'total_current' => round($totalCurrent, 2),
             'total_profit' => round($totalProfit, 2),
+            'total_earnings' => round($totalEarnings, 2),
             'profit_percentage' => round($profitPercentage, 2),
             'assets_count' => $consolidated->count(),
             'by_category' => $byCategory,

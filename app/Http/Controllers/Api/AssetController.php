@@ -59,35 +59,29 @@ class AssetController extends BaseController
 
     public function quick(QuickCompaniesRequest $request): JsonResponse
     {
-        $accountIds = $request->user()->accounts()->pluck('id');
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
 
-        $recentTickerIds = Consolidated::whereIn('account_id', $accountIds)
+        $tickerIds = Consolidated::whereIn('account_id', $accountIds)
             ->open()
+            ->where('closed', false)
             ->where('quantity_current', '>', 0)
             ->whereNotNull('company_ticker_id')
-            ->orderByDesc('updated_at')
-            ->get(['company_ticker_id'])
+            ->distinct('company_ticker_id')
             ->pluck('company_ticker_id')
-            ->unique()
-            ->values();
+            ->all();
 
-        if ($recentTickerIds->isEmpty()) {
+        if (empty($tickerIds)) {
             return $this->sendResponse([]);
         }
 
         $tickers = CompanyTicker::active()
             ->whereHas('company', fn ($query) => $query->active())
-            ->whereIn('id', $recentTickerIds)
+            ->whereIn('id', $tickerIds)
             ->with(['company.companyCategory'])
-            ->get()
-            ->keyBy('id');
+            ->orderBy('code')
+            ->get();
 
-        $sorted = $recentTickerIds
-            ->map(fn ($id) => $tickers->get($id))
-            ->filter()
-            ->values();
-
-        return $this->sendResponse(CompanyTickerQuickResource::collection($sorted));
+        return $this->sendResponse(CompanyTickerQuickResource::collection($tickers));
     }
 
     public function show(CompanyTicker $companyTicker): JsonResponse
