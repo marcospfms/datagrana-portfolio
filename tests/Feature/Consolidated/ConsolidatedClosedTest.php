@@ -29,7 +29,8 @@ class ConsolidatedClosedTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.closed', true);
+            ->assertJsonPath('data.0.closed', true)
+            ->assertJsonPath('meta.total_closed', 1);
     }
 
     public function test_can_filter_closed_positions_by_search(): void
@@ -57,7 +58,8 @@ class ConsolidatedClosedTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.company_ticker.code', 'ABCD3');
+            ->assertJsonPath('data.0.company_ticker.code', 'ABCD3')
+            ->assertJsonPath('meta.total_closed', 2);
     }
 
     public function test_closed_endpoint_validates_query_params(): void

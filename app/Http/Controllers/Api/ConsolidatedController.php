@@ -20,9 +20,10 @@ class ConsolidatedController extends BaseController
 
         $accountIds = $request->user()->accounts()->pluck('id')->all();
         $perPage = 10;
+        $baseQuery = Consolidated::whereIn('account_id', $accountIds)->closed();
+        $totalClosed = (clone $baseQuery)->count();
 
-        $consolidated = Consolidated::whereIn('account_id', $accountIds)
-            ->closed()
+        $consolidated = (clone $baseQuery)
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search');
 
@@ -45,7 +46,12 @@ class ConsolidatedController extends BaseController
             ->paginate($perPage)
             ->withQueryString();
 
-        return ConsolidatedClosedResource::collection($consolidated)->response();
+        $response = ConsolidatedClosedResource::collection($consolidated)->response();
+        $payload = $response->getData(true);
+        $payload['meta']['total_closed'] = $totalClosed;
+        $response->setData($payload);
+
+        return $response;
     }
 
     public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
