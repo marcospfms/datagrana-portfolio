@@ -230,11 +230,13 @@ class ConsolidatedController extends BaseController
                 'treasure.treasureCategory',
                 'account.bank',
             ])
+            ->withSum('earnings as earnings_total', 'net_value')
             ->get();
 
         $totalInvested = $consolidated->sum('total_purchased');
         $totalCurrent = $consolidated->sum('balance');
         $totalProfit = $totalCurrent - $totalInvested;
+        $totalEarnings = $consolidated->sum('earnings_total');
         $profitPercentage = $totalInvested > 0 ? ($totalProfit / $totalInvested) * 100 : 0;
 
         $byCategory = $consolidated->groupBy(function ($item) {
@@ -245,6 +247,7 @@ class ConsolidatedController extends BaseController
             $invested = $items->sum('total_purchased');
             $current = $items->sum('balance');
             $profit = $current - $invested;
+            $earnings = $items->sum('earnings_total');
             $first = $items->first();
             $category = $first?->companyTicker?->company?->companyCategory
                 ?? $first?->treasure?->treasureCategory;
@@ -259,6 +262,7 @@ class ConsolidatedController extends BaseController
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
                 'profit' => round($profit, 2),
+                'earnings' => round($earnings, 2),
                 'profit_percentage' => $invested > 0 ? round(($profit / $invested) * 100, 2) : 0,
             ];
         })->values();
@@ -269,6 +273,7 @@ class ConsolidatedController extends BaseController
             $invested = $accountPositions->sum('total_purchased');
             $current = $accountPositions->sum('balance');
             $profit = $current - $invested;
+            $earnings = $accountPositions->sum('earnings_total');
 
             return [
                 'account_id' => $account->id,
@@ -279,6 +284,7 @@ class ConsolidatedController extends BaseController
                 'invested' => round($invested, 2),
                 'current' => round($current, 2),
                 'profit' => round($profit, 2),
+                'earnings' => round($earnings, 2),
                 'profit_percentage' => $invested > 0 ? round(($profit / $invested) * 100, 2) : 0,
             ];
         })->values();
@@ -287,6 +293,7 @@ class ConsolidatedController extends BaseController
             'total_invested' => round($totalInvested, 2),
             'total_current' => round($totalCurrent, 2),
             'total_profit' => round($totalProfit, 2),
+            'total_earnings' => round($totalEarnings, 2),
             'profit_percentage' => round($profitPercentage, 2),
             'assets_count' => $consolidated->count(),
             'by_category' => $byCategory,
