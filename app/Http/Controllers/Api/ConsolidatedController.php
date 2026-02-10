@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\ConsolidatedClosedResource;
 use App\Http\Resources\ConsolidatedResource;
 use App\Models\Consolidated;
 use App\Services\SubscriptionLimitService;
@@ -11,15 +12,49 @@ use Illuminate\Support\Facades\DB;
 
 class ConsolidatedController extends BaseController
 {
-    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
+    public function closed(Request $request): JsonResponse
     {
         $request->validate([
-            'account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            'closed' => ['nullable', 'boolean'],
             'search' => ['nullable', 'string', 'min:1', 'max:100'],
         ]);
 
-        $accountIds = $request->user()->accounts()->pluck('id');
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
+        $perPage = 10;
+
+        $consolidated = Consolidated::whereIn('account_id', $accountIds)
+            ->closed()
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search');
+
+                $query->where(function ($filterQuery) use ($search) {
+                    $filterQuery->whereHas('companyTicker.company', function ($companyQuery) use ($search) {
+                        $companyQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('nickname', 'like', "%{$search}%");
+                    })
+                        ->orWhereHas('companyTicker', function ($tickerQuery) use ($search) {
+                            $tickerQuery->where('code', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->with([
+                'companyTicker.company.companyCategory',
+                'account.bank',
+            ])
+            ->withSum('earnings as earnings_total', 'net_value')
+            ->orderByDesc('updated_at')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return ConsolidatedClosedResource::collection($consolidated)->response();
+    }
+
+    public function index(Request $request, SubscriptionLimitService $limitService): JsonResponse
+    {
+        $request->validate([
+            'search' => ['nullable', 'string', 'min:1', 'max:100'],
+        ]);
+
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
         $perPage = 10;
         $subscription = $limitService->ensureUserHasSubscription($request->user());
         $maxPositions = $subscription->getLimit('max_positions');
@@ -37,12 +72,7 @@ class ConsolidatedController extends BaseController
         $request->attributes->set('allowed_position_ids', $allowedIds);
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
-            ->when($request->account_id, fn ($query, $accountId) =>
-                $query->where('account_id', $accountId)
-            )
-            ->when($request->has('closed'), fn ($query) =>
-                $query->where('closed', $request->boolean('closed'))
-            )
+            ->open()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search');
 
@@ -141,7 +171,7 @@ class ConsolidatedController extends BaseController
             })
             ->map(fn ($items, $date) => [
                 'date' => $date,
-                'data' => array_values($items),
+                'data' => array_values($items->all()),
             ])
             ->values()
             ->all();
@@ -183,7 +213,7 @@ class ConsolidatedController extends BaseController
 
     public function summary(Request $request): JsonResponse
     {
-        $accountIds = $request->user()->accounts()->pluck('id');
+        $accountIds = $request->user()->accounts()->pluck('id')->all();
 
         $consolidated = Consolidated::whereIn('account_id', $accountIds)
             ->open()

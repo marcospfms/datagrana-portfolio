@@ -17,6 +17,7 @@ class ConsolidatedIndexTest extends TestCase
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
 
         Consolidated::factory()->count(3)->forAccount($account)->create();
+        Consolidated::factory()->forAccount($account)->closed()->create();
         Consolidated::factory()->count(2)->create();
 
         $response = $this->getJson('/api/consolidated', $this->authHeaders($auth['token']));
@@ -25,39 +26,38 @@ class ConsolidatedIndexTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
-    public function test_can_filter_by_account(): void
-    {
-        $auth = $this->createAuthenticatedUser();
-        $account1 = Account::factory()->create(['user_id' => $auth['user']->id]);
-        $account2 = Account::factory()->create(['user_id' => $auth['user']->id]);
-
-        Consolidated::factory()->count(2)->forAccount($account1)->create();
-        Consolidated::factory()->count(3)->forAccount($account2)->create();
-
-        $response = $this->getJson(
-            "/api/consolidated?account_id={$account1->id}",
-            $this->authHeaders($auth['token'])
-        );
-
-        $response->assertStatus(200)
-            ->assertJsonCount(2, 'data');
-    }
-
-    public function test_can_filter_by_closed_status(): void
+    public function test_can_filter_by_search(): void
     {
         $auth = $this->createAuthenticatedUser();
         $account = Account::factory()->create(['user_id' => $auth['user']->id]);
 
-        Consolidated::factory()->count(2)->forAccount($account)->create(['closed' => false]);
-        Consolidated::factory()->count(1)->forAccount($account)->create(['closed' => true]);
+        $first = Consolidated::factory()->forAccount($account)->create();
+        $second = Consolidated::factory()->forAccount($account)->create();
+
+        $first->companyTicker()->update(['code' => 'AAAA3']);
+        $second->companyTicker()->update(['code' => 'BBBB4']);
 
         $response = $this->getJson(
-            '/api/consolidated?closed=0',
+            '/api/consolidated?search=AAAA',
             $this->authHeaders($auth['token'])
         );
 
         $response->assertStatus(200)
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.company_ticker.code', 'AAAA3');
+    }
+
+    public function test_index_validates_search_param(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+
+        $response = $this->getJson(
+            '/api/consolidated?search=' . str_repeat('A', 101),
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['search']);
     }
 
     public function test_cannot_list_positions_without_authentication(): void

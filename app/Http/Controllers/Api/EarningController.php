@@ -14,27 +14,15 @@ class EarningController extends BaseController
 {
     public function index(Request $request): JsonResponse
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'min:1', 'max:100'],
+        ]);
+
         $perPage = 5; // Paginação por grupos de data
 
         $query = Earning::query()
             ->whereHas('consolidated.account', fn ($q) => $q->where('user_id', $request->user()->id))
             ->with(['earningType', 'consolidated.companyTicker.company.category', 'consolidated.treasure.treasureCategory', 'consolidated.account.bank']);
-
-        if ($request->filled('consolidated_id')) {
-            $query->where('consolidated_id', $request->integer('consolidated_id'));
-        }
-
-        if ($request->filled('earning_type_id')) {
-            $query->where('earning_type_id', $request->integer('earning_type_id'));
-        }
-
-        if ($request->filled('from')) {
-            $query->whereDate('date', '>=', $request->input('from'));
-        }
-
-        if ($request->filled('to')) {
-            $query->whereDate('date', '<=', $request->input('to'));
-        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -42,6 +30,8 @@ class EarningController extends BaseController
                 $q->where('code', 'like', "%{$search}%");
             });
         }
+
+        $totalEvents = (clone $query)->count();
 
         $dateGroups = (clone $query)
             ->selectRaw('DATE(date) as earning_date')
@@ -115,6 +105,7 @@ class EarningController extends BaseController
                 'last_page' => $dateGroups->lastPage(),
                 'per_page' => $dateGroups->perPage(),
                 'total' => $dateGroups->total(),
+                'total_events' => $totalEvents,
             ],
         ]);
     }
