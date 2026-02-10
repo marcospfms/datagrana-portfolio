@@ -42,7 +42,9 @@ class ConsolidatedController extends BaseController
                 'account.bank',
             ])
             ->withSum('earnings as earnings_total', 'net_value')
-            ->orderByDesc('updated_at')
+            ->orderBy('closed', 'asc')
+            ->orderByRaw('CASE WHEN treasure_id IS NOT NULL THEN (SELECT code FROM treasures WHERE id = treasure_id) END ASC')
+            ->orderByRaw('CASE WHEN company_ticker_id IS NOT NULL THEN (SELECT code FROM company_tickers WHERE id = company_ticker_id) END ASC')
             ->paginate($perPage)
             ->withQueryString();
 
