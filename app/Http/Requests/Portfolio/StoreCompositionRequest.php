@@ -23,6 +23,71 @@ class StoreCompositionRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        $compositions = $this->input('compositions');
+
+        if (is_array($compositions) && count($compositions) > 0) {
+            return;
+        }
+
+        $singleTickerId = $this->input('company_ticker_id');
+        $singlePercentage = $this->input('percentage');
+
+        if ($singleTickerId !== null && $singlePercentage !== null) {
+            $this->merge([
+                'compositions' => [
+                    [
+                        'type' => 'company',
+                        'asset_id' => (int) $singleTickerId,
+                        'percentage' => $singlePercentage,
+                    ],
+                ],
+            ]);
+
+            return;
+        }
+
+        $tickerPercentages = $this->input('ticker_percentages');
+        if (!is_array($tickerPercentages) || empty($tickerPercentages)) {
+            return;
+        }
+
+        $codes = collect(array_keys($tickerPercentages))
+            ->map(fn ($code) => strtoupper(trim((string) $code)))
+            ->filter()
+            ->values()
+            ->all();
+
+        if (empty($codes)) {
+            return;
+        }
+
+        $tickers = CompanyTicker::whereIn('code', $codes)
+            ->where('status', true)
+            ->get(['id', 'code'])
+            ->keyBy(fn ($ticker) => strtoupper((string) $ticker->code));
+
+        $normalized = [];
+
+        foreach ($tickerPercentages as $code => $percentage) {
+            $normalizedCode = strtoupper(trim((string) $code));
+            if ($normalizedCode === '') {
+                continue;
+            }
+
+            $ticker = $tickers->get($normalizedCode);
+            $normalized[] = [
+                'type' => 'company',
+                'asset_id' => $ticker?->id,
+                'percentage' => $percentage,
+                'asset_code' => $normalizedCode,
+            ];
+        }
+
+        $this->merge(['compositions' => $normalized]);
+    }
+
     public function messages(): array
     {
         return [
@@ -43,6 +108,34 @@ class StoreCompositionRequest extends FormRequest
             $compositions = $this->input('compositions', []);
             $companyIds = [];
             $treasureIds = [];
+
+            $tickerPercentages = $this->input('ticker_percentages');
+            if (is_array($tickerPercentages) && count($tickerPercentages) > 0) {
+                $codes = collect(array_keys($tickerPercentages))
+                    ->map(fn ($code) => strtoupper(trim((string) $code)))
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                if (empty($codes)) {
+                    $validator->errors()->add('ticker_percentages', 'Informe pelo menos um ticker valido.');
+                } else {
+                    $validCodes = CompanyTicker::whereIn('code', $codes)
+                        ->where('status', true)
+                        ->pluck('code')
+                        ->map(fn ($code) => strtoupper((string) $code))
+                        ->all();
+
+                    foreach ($codes as $code) {
+                        if (!in_array($code, $validCodes, true)) {
+                            $validator->errors()->add(
+                                "ticker_percentages.{$code}",
+                                "Ticker {$code} nao encontrado ou inativo."
+                            );
+                        }
+                    }
+                }
+            }
 
             foreach ($compositions as $index => $composition) {
                 $type = $composition['type'] ?? null;
