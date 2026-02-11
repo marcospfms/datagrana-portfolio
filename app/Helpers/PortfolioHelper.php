@@ -4,6 +4,19 @@ namespace App\Helpers;
 
 class PortfolioHelper
 {
+    public static function resolveYocMedal(float $yieldOnCostMonthly): string
+    {
+        if ($yieldOnCostMonthly >= 1) {
+            return 'gold';
+        }
+
+        if ($yieldOnCostMonthly >= 0.8) {
+            return 'silver';
+        }
+
+        return 'bronze';
+    }
+
     public static function calculateToBuyQuantity(
         ?float $idealPercentage,
         ?float $targetValue,
@@ -53,7 +66,13 @@ class PortfolioHelper
         return '0 cotas';
     }
 
-    public static function prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio): array
+    public static function prepareCrossingData(
+        $compositions,
+        $consolidated,
+        $compositionHistory,
+        $portfolio,
+        array $yieldMetricsByConsolidated = []
+    ): array
     {
         $crossingData = [];
         $historyKeys = [];
@@ -116,6 +135,12 @@ class PortfolioHelper
                 'composition_id' => $composition->id,
                 'consolidated_id' => null,
                 'deleted_at' => $composition->deleted_at,
+                'yield_on_cost_monthly' => 0,
+                'yield_monthly' => 0,
+                'yield_annual' => 0,
+                'yield_on_cost_annual' => 0,
+                'is_gold_yoc' => false,
+                'yoc_medal' => 'bronze',
             ];
         }
 
@@ -151,6 +176,14 @@ class PortfolioHelper
                 $crossingData[$key]['last_price'] = $lastPrice;
                 $crossingData[$key]['last_price_updated'] = $consolidatedAsset->companyTicker?->last_price_updated?->toDateTimeString()
                     ?? $crossingData[$key]['last_price_updated'];
+                $yieldMetrics = $yieldMetricsByConsolidated[$consolidatedAsset->id] ?? [];
+                $yieldOnCostMonthly = (float) ($yieldMetrics['yield_on_cost_monthly'] ?? 0);
+                $crossingData[$key]['yield_monthly'] = (float) ($yieldMetrics['yield_monthly'] ?? 0);
+                $crossingData[$key]['yield_on_cost_monthly'] = $yieldOnCostMonthly;
+                $crossingData[$key]['yield_annual'] = (float) ($yieldMetrics['yield_annual'] ?? 0);
+                $crossingData[$key]['yield_on_cost_annual'] = (float) ($yieldMetrics['yield_on_cost_annual'] ?? 0);
+                $crossingData[$key]['is_gold_yoc'] = $yieldOnCostMonthly >= 1;
+                $crossingData[$key]['yoc_medal'] = self::resolveYocMedal($yieldOnCostMonthly);
                 $toBuyQuantity = self::calculateToBuyQuantity(
                     $crossingData[$key]['ideal_percentage'],
                     $portfolio->target_value,
@@ -180,6 +213,8 @@ class PortfolioHelper
                     $lastPrice,
                     $history ? $history->deleted_at : null
                 );
+                $yieldMetrics = $yieldMetricsByConsolidated[$consolidatedAsset->id] ?? [];
+                $yieldOnCostMonthly = (float) ($yieldMetrics['yield_on_cost_monthly'] ?? 0);
                 $crossingData[$key] = [
                     'ticker' => $consolidatedAsset->treasure_id
                         ? ($consolidatedAsset->treasure->code ?? 'N/A')
@@ -224,6 +259,12 @@ class PortfolioHelper
                     'consolidated_id' => $consolidatedAsset->id,
                     'was_in_portfolio' => true,
                     'deleted_at' => $history ? $history->deleted_at : null,
+                    'yield_on_cost_monthly' => $yieldOnCostMonthly,
+                    'yield_monthly' => (float) ($yieldMetrics['yield_monthly'] ?? 0),
+                    'yield_annual' => (float) ($yieldMetrics['yield_annual'] ?? 0),
+                    'yield_on_cost_annual' => (float) ($yieldMetrics['yield_on_cost_annual'] ?? 0),
+                    'is_gold_yoc' => $yieldOnCostMonthly >= 1,
+                    'yoc_medal' => self::resolveYocMedal($yieldOnCostMonthly),
                 ];
             }
         }

@@ -137,6 +137,11 @@ class CrossingTest extends TestCase
         $this->assertEquals('locked', $crossingItem['to_buy_quantity_formatted']);
         $this->assertEquals('locked', $crossingItem['profit']);
         $this->assertEquals('locked', $crossingItem['profit_percentage']);
+        $this->assertEquals('locked', $crossingItem['yield_monthly']);
+        $this->assertEquals('locked', $crossingItem['yield_on_cost_monthly']);
+        $this->assertEquals('locked', $crossingItem['yield_annual']);
+        $this->assertEquals('locked', $crossingItem['yield_on_cost_annual']);
+        $this->assertEquals('locked', $crossingItem['yoc_medal']);
 
         $summary = $response->json('data.summary');
         $this->assertEquals('locked', $summary['resultValue']);
@@ -345,10 +350,12 @@ class CrossingTest extends TestCase
 
         Earning::factory()->forConsolidated($consolidated)->create([
             'net_value' => 17.35,
+            'quantity' => 100,
         ]);
 
         Earning::factory()->forConsolidated($consolidated)->create([
             'net_value' => 2.65,
+            'quantity' => 100,
         ]);
 
         $response = $this->getJson(
@@ -360,6 +367,12 @@ class CrossingTest extends TestCase
 
         $crossingItem = $response->json('data.crossing.0');
         $this->assertEquals(20.0, (float) $crossingItem['dividend_received']);
+        $this->assertEquals(0.87, round((float) $crossingItem['yield_monthly'], 2));
+        $this->assertEquals(1.0, round((float) $crossingItem['yield_on_cost_monthly'], 2));
+        $this->assertEquals(10.43, round((float) $crossingItem['yield_annual'], 2));
+        $this->assertEquals(12.0, round((float) $crossingItem['yield_on_cost_annual'], 2));
+        $this->assertTrue((bool) $crossingItem['is_gold_yoc']);
+        $this->assertEquals('gold', $crossingItem['yoc_medal']);
     }
 
     public function test_cannot_get_crossing_for_other_user_portfolio(): void

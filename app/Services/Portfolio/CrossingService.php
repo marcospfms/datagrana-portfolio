@@ -78,7 +78,15 @@ class CrossingService
                 return [$deletedAt, $customOrder];
             });
 
-        $crossing = PortfolioHelper::prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio);
+        $yieldMetricsByConsolidated = $this->buildYieldMetricsMap($consolidated);
+
+        $crossing = PortfolioHelper::prepareCrossingData(
+            $compositions,
+            $consolidated,
+            $compositionHistory,
+            $portfolio,
+            $yieldMetricsByConsolidated,
+        );
         $summary = $this->buildSummary($crossing, $portfolio);
 
         if (!$this->limitService->hasFullCrossingAccess($user)) {
@@ -100,6 +108,11 @@ class CrossingService
             'to_buy_quantity_formatted',
             'profit',
             'profit_percentage',
+            'yield_monthly',
+            'yield_on_cost_monthly',
+            'yield_annual',
+            'yield_on_cost_annual',
+            'yoc_medal',
         ];
 
         return array_map(function ($item) use ($fieldsToMask) {
@@ -109,8 +122,87 @@ class CrossingService
                 }
             }
 
+            if (array_key_exists('is_gold_yoc', $item)) {
+                $item['is_gold_yoc'] = false;
+            }
+
             return $item;
         }, $crossing);
+    }
+
+    private function buildYieldMetricsMap($consolidated): array
+    {
+        if ($consolidated->isEmpty()) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($consolidated as $item) {
+            if (!$item->company_ticker_id) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $averagePurchasePrice = (float) ($item->average_purchase_price ?? 0);
+            if ($averagePurchasePrice <= 0) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $earnings = $item->earnings()
+                ->orderByDesc('date')
+                ->orderByDesc('id')
+                ->take(12)
+                ->get(['net_value', 'quantity']);
+
+            if ($earnings->isEmpty()) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $totalValues = (float) $earnings->sum('net_value');
+            $totalQuantities = (float) $earnings->sum('quantity');
+
+            if ($totalQuantities <= 0) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $averagePerShare = $totalValues / $totalQuantities;
+            $currentPrice = (float) ($item->companyTicker?->last_price ?? $averagePurchasePrice);
+            $yieldMonthly = $currentPrice > 0 ? ($averagePerShare / $currentPrice) * 100 : 0.0;
+            $yieldOnCostMonthly = ($averagePerShare / $averagePurchasePrice) * 100;
+
+            $result[$item->id] = [
+                'yield_monthly' => $yieldMonthly,
+                'yield_on_cost_monthly' => $yieldOnCostMonthly,
+                'yield_annual' => $yieldMonthly * 12,
+                'yield_on_cost_annual' => $yieldOnCostMonthly * 12,
+            ];
+        }
+
+        return $result;
     }
 
     private function buildSummary(array $crossing, Portfolio $portfolio): array
