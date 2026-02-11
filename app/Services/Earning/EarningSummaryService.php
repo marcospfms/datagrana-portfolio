@@ -40,6 +40,8 @@ class EarningSummaryService
         $totalNet = (float) $earnings->sum(fn (Earning $earning) => (float) $earning->net_value);
         $totalGross = (float) $earnings->sum(fn (Earning $earning) => (float) ($earning->gross_value ?? 0));
         $totalTax = (float) $earnings->sum(fn (Earning $earning) => (float) ($earning->tax ?? 0));
+        $annualHistory = $this->buildMonthlyData($earnings);
+        $annualData = array_slice($annualHistory, 0, 2);
 
         return [
             'count' => $earnings->count(),
@@ -47,7 +49,10 @@ class EarningSummaryService
             'total_gross' => $this->toDecimal($totalGross),
             'total_tax' => $this->toDecimal($totalTax),
             'grand_total' => round($totalNet, 2),
-            'monthly_data' => $this->buildMonthlyData($earnings),
+            'monthly_average' => $this->calculateMonthlyAverage($earnings, $totalNet),
+            'monthly_data' => $annualData,
+            'annual_data' => $annualData,
+            'annual_history' => $annualHistory,
             'monthly_totals' => $this->buildMonthlyTotals($earnings),
             'category_data' => $this->buildCategoryData($earnings),
             'chart_data' => $this->buildChartData($earnings, 12),
@@ -62,7 +67,7 @@ class EarningSummaryService
     {
         $years = $earnings
             ->groupBy(fn (Earning $earning) => (int) ($earning->date?->format('Y') ?? 0))
-            ->sortKeys();
+            ->sortKeysDesc();
 
         return $years->map(function (Collection $yearItems, int $year): array {
             $yearTotal = 0.0;
@@ -94,9 +99,28 @@ class EarningSummaryService
                 'year' => $year,
                 'months' => $months,
                 'total' => round($yearTotal, 2),
+                'monthly_average' => round($yearTotal / 12, 2),
                 'average' => round($yearTotal / 12, 2),
             ];
         })->values()->all();
+    }
+
+    /**
+     * @param Collection<int, Earning> $earnings
+     */
+    private function calculateMonthlyAverage(Collection $earnings, float $totalNet): float
+    {
+        $activeMonths = $earnings
+            ->map(fn (Earning $earning) => $earning->date?->format('Y-m'))
+            ->filter()
+            ->unique()
+            ->count();
+
+        if ($activeMonths <= 0) {
+            return 0;
+        }
+
+        return round($totalNet / $activeMonths, 2);
     }
 
     /**
