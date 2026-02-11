@@ -568,6 +568,20 @@ Valida resumo e agrupamento de proventos.
 | `test_cannot_get_grouped_without_authentication` | Sem auth retorna 401 |
 | `test_returns_error_for_invalid_group_parameter` | Parametro group invalido retorna 422 |
 
+### Cenarios adicionais - Resumo Analitico de Proventos (2026-02)
+Atualizacao do endpoint `GET /api/earnings/summary` para retornar payload analitico completo.
+
+| Cenario | Validacao esperada |
+|--------|---------------------|
+| Contrato do payload analitico | Resposta inclui `grand_total`, `monthly_data`, `monthly_totals`, `category_data`, `chart_data` |
+| Compatibilidade retroativa | Campos legados `count`, `total_net`, `total_gross`, `total_tax` continuam presentes |
+| Escopo por usuario | Dados retornam apenas proventos das contas do usuario autenticado |
+| Filtro por periodo | `from` e `to` limitam os dados em todas as secoes analiticas |
+| Estrutura mensal | `monthly_data` contem anos, 12 meses e detalhes por mes (`summary` + `earnings`) |
+| Evolucao 12 meses | `chart_data` retorna exatamente 12 pontos ordenados por mes |
+| Categoria por tipo | `category_data` agrega por tipo de provento e respeita `hex_color` com fallback |
+| Validacao de parametros | `to < from` retorna 422 (`after_or_equal:from`) |
+
 ---
 
 ## Health
@@ -652,6 +666,17 @@ O `Tests\TestCase` base fornece helpers:
 **Arquivo:** `tests/Feature/Subscription/RevenueCatWebhookTest.php` (+2 metodos)
 - ✅ `test_billing_issue_logs_warning_and_returns_success` - BILLING_ISSUE loga warning
 - ✅ `test_product_change_upgrade_applies_immediately` - PRODUCT_CHANGE upgrade aplica imediatamente
+
+### Fase 3 - Modulo Earnings (V8) - Resumo Analitico
+
+**Mudanca documentada:** `GET /api/earnings/summary` passou a retornar dados analiticos completos via `EarningSummaryService`.
+
+**Arquivos impactados:**
+- `app/Services/Earning/EarningSummaryService.php` (NOVO)
+- `app/Http/Controllers/Api/EarningController.php`
+
+**Plano de cobertura de teste (feature):**
+- Expandir `tests/Feature/Earning/EarningSummaryTest.php` com os cenarios da secao "Cenarios adicionais - Resumo Analitico de Proventos (2026-02)".
 
 ---
 

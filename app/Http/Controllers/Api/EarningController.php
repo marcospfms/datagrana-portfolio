@@ -7,11 +7,20 @@ use App\Http\Requests\Earning\UpdateEarningRequest;
 use App\Http\Resources\EarningResource;
 use App\Models\Consolidated;
 use App\Models\Earning;
+use App\Services\Earning\EarningSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EarningController extends BaseController
 {
+    private EarningSummaryService $earningSummaryService;
+
+    public function __construct(
+        EarningSummaryService $earningSummaryService
+    ) {
+        $this->earningSummaryService = $earningSummaryService;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -184,30 +193,18 @@ class EarningController extends BaseController
 
     public function summary(Request $request): JsonResponse
     {
-        $query = Earning::query()
-            ->whereHas('consolidated.account', fn ($q) => $q->where('user_id', $request->user()->id));
-
-        if ($request->filled('from')) {
-            $query->whereDate('date', '>=', $request->input('from'));
-        }
-
-        if ($request->filled('to')) {
-            $query->whereDate('date', '<=', $request->input('to'));
-        }
-
-        $summary = $query
-            ->selectRaw('COUNT(*) as count')
-            ->selectRaw('COALESCE(SUM(net_value), 0) as total_net')
-            ->selectRaw('COALESCE(SUM(gross_value), 0) as total_gross')
-            ->selectRaw('COALESCE(SUM(tax), 0) as total_tax')
-            ->first();
-
-        return $this->sendResponse([
-            'count' => (int) ($summary->count ?? 0),
-            'total_net' => number_format((float) ($summary->total_net ?? 0), 8, '.', ''),
-            'total_gross' => number_format((float) ($summary->total_gross ?? 0), 8, '.', ''),
-            'total_tax' => number_format((float) ($summary->total_tax ?? 0), 8, '.', ''),
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
+
+        $summary = $this->earningSummaryService->build(
+            $request->user(),
+            $validated['from'] ?? null,
+            $validated['to'] ?? null
+        );
+
+        return $this->sendResponse($summary);
     }
 
     public function grouped(Request $request): JsonResponse
