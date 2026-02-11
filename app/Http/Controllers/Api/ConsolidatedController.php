@@ -16,15 +16,8 @@ class ConsolidatedController extends BaseController
 {
     public function performanceByAsset(Request $request, AssetPerformanceService $service): JsonResponse
     {
-        $validated = $request->validate([
-            'segment' => ['nullable', 'string', 'min:1', 'max:120'],
-            'sort' => ['nullable', 'in:ticker,invested,current_value,performance_abs,performance_pct'],
-            'direction' => ['nullable', 'in:asc,desc'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
-        ]);
-
         return $this->sendResponse(
-            $service->buildForUser($request->user(), $validated)
+            $service->buildForUser($request->user())
         );
     }
 

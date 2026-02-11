@@ -9,15 +9,9 @@ use Illuminate\Support\Collection;
 class AssetPerformanceService
 {
     /**
-     * @param array{
-     *   segment?: string|null,
-     *   sort?: string|null,
-     *   direction?: string|null,
-     *   limit?: int|null
-     * } $filters
      * @return array<string, mixed>
      */
-    public function buildForUser(User $user, array $filters = []): array
+    public function buildForUser(User $user): array
     {
         $accountIds = $user->accounts()->pluck('id')->all();
 
@@ -29,22 +23,9 @@ class AssetPerformanceService
             ])
             ->get();
 
-        $items = $this->buildItems($positions);
-
-        if (!empty($filters['segment'])) {
-            $segmentFilter = mb_strtolower((string) $filters['segment']);
-            $items = $items
-                ->filter(fn (array $item) => mb_strtolower((string) $item['segment']) === $segmentFilter)
-                ->values();
-        }
-
-        $sort = (string) ($filters['sort'] ?? 'performance_pct');
-        $direction = (string) ($filters['direction'] ?? 'desc');
-        $items = $this->sortItems($items, $sort, $direction);
-
-        if (!empty($filters['limit']) && (int) $filters['limit'] > 0) {
-            $items = $items->take((int) $filters['limit'])->values();
-        }
+        $items = $this->buildItems($positions)
+            ->sortByDesc('performance_pct')
+            ->values();
 
         return [
             'items' => $items->values()->all(),
@@ -141,27 +122,4 @@ class AssetPerformanceService
         ];
     }
 
-    /**
-     * @param Collection<int, array<string, mixed>> $items
-     * @return Collection<int, array<string, mixed>>
-     */
-    private function sortItems(Collection $items, string $sort, string $direction): Collection
-    {
-        $allowedSort = [
-            'ticker',
-            'invested',
-            'current_value',
-            'performance_abs',
-            'performance_pct',
-        ];
-
-        $sortField = in_array($sort, $allowedSort, true) ? $sort : 'performance_pct';
-        $directionNormalized = mb_strtolower($direction) === 'asc' ? 'asc' : 'desc';
-
-        $sorted = $directionNormalized === 'asc'
-            ? $items->sortBy($sortField)
-            : $items->sortByDesc($sortField);
-
-        return $sorted->values();
-    }
 }
