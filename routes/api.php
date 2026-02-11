@@ -73,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/consolidated/summary', [ConsolidatedController::class, 'summary'])->name('consolidated.summary');
     Route::get('/consolidated/overview', [ConsolidatedController::class, 'overview'])->name('consolidated.overview');
+    Route::get('/consolidated/performance-by-asset', [ConsolidatedController::class, 'performanceByAsset'])
+        ->name('consolidated.performance-by-asset');
     Route::get('/consolidated/closed', [ConsolidatedController::class, 'closed'])->name('consolidated.closed');
     Route::get('/consolidated', [ConsolidatedController::class, 'index'])->name('consolidated.index');
     Route::get('/consolidated/{consolidated}', [ConsolidatedController::class, 'show'])->name('consolidated.show');

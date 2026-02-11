@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\ConsolidatedClosedResource;
 use App\Http\Resources\ConsolidatedResource;
 use App\Models\Consolidated;
+use App\Services\Consolidated\AssetPerformanceService;
 use App\Services\Consolidated\OverviewService;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,20 @@ use Illuminate\Support\Facades\DB;
 
 class ConsolidatedController extends BaseController
 {
+    public function performanceByAsset(Request $request, AssetPerformanceService $service): JsonResponse
+    {
+        $validated = $request->validate([
+            'segment' => ['nullable', 'string', 'min:1', 'max:120'],
+            'sort' => ['nullable', 'in:ticker,invested,current_value,performance_abs,performance_pct'],
+            'direction' => ['nullable', 'in:asc,desc'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        return $this->sendResponse(
+            $service->buildForUser($request->user(), $validated)
+        );
+    }
+
     public function overview(Request $request, OverviewService $overviewService): JsonResponse
     {
         return $this->sendResponse($overviewService->buildForUser($request->user()));
