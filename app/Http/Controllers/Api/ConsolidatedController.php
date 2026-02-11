@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\ConsolidatedClosedResource;
 use App\Http\Resources\ConsolidatedResource;
 use App\Models\Consolidated;
+use App\Services\Consolidated\OverviewService;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\DB;
 
 class ConsolidatedController extends BaseController
 {
+    public function overview(Request $request, OverviewService $overviewService): JsonResponse
+    {
+        return $this->sendResponse($overviewService->buildForUser($request->user()));
+    }
+
     public function closed(Request $request): JsonResponse
     {
         $request->validate([
