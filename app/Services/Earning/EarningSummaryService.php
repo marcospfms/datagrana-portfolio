@@ -41,7 +41,7 @@ class EarningSummaryService
         $totalGross = (float) $earnings->sum(fn (Earning $earning) => (float) ($earning->gross_value ?? 0));
         $totalTax = (float) $earnings->sum(fn (Earning $earning) => (float) ($earning->tax ?? 0));
         $annualHistory = $this->buildMonthlyData($earnings);
-        $annualData = array_slice($annualHistory, 0, 2);
+        $annualData = array_slice($annualHistory, 0, 1);
 
         return [
             'count' => $earnings->count(),
