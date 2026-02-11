@@ -7,6 +7,7 @@ use App\Models\Consolidated;
 use App\Models\Portfolio;
 use App\Models\User;
 use App\Services\SubscriptionLimitService;
+use Illuminate\Support\Facades\DB;
 
 class CrossingService
 {
@@ -78,7 +79,17 @@ class CrossingService
                 return [$deletedAt, $customOrder];
             });
 
-        $crossing = PortfolioHelper::prepareCrossingData($compositions, $consolidated, $compositionHistory, $portfolio);
+        $yieldOnCostMonthlyByConsolidated = $this->buildYieldOnCostMonthlyMap(
+            $consolidated->pluck('id')->all()
+        );
+
+        $crossing = PortfolioHelper::prepareCrossingData(
+            $compositions,
+            $consolidated,
+            $compositionHistory,
+            $portfolio,
+            $yieldOnCostMonthlyByConsolidated,
+        );
         $summary = $this->buildSummary($crossing, $portfolio);
 
         if (!$this->limitService->hasFullCrossingAccess($user)) {
@@ -100,6 +111,8 @@ class CrossingService
             'to_buy_quantity_formatted',
             'profit',
             'profit_percentage',
+            'yield_on_cost_monthly',
+            'yoc_medal',
         ];
 
         return array_map(function ($item) use ($fieldsToMask) {
@@ -109,8 +122,50 @@ class CrossingService
                 }
             }
 
+            if (array_key_exists('is_gold_yoc', $item)) {
+                $item['is_gold_yoc'] = false;
+            }
+
             return $item;
         }, $crossing);
+    }
+
+    private function buildYieldOnCostMonthlyMap(array $consolidatedIds): array
+    {
+        if (empty($consolidatedIds)) {
+            return [];
+        }
+
+        $rankedEarnings = DB::table('earnings as e')
+            ->selectRaw(
+                'e.consolidated_id, e.net_value, e.quantity, ROW_NUMBER() OVER (PARTITION BY e.consolidated_id ORDER BY e.date DESC, e.id DESC) as rn'
+            )
+            ->whereIn('e.consolidated_id', $consolidatedIds);
+
+        $earningsCalc = DB::query()
+            ->fromSub($rankedEarnings, 'ranked_earnings')
+            ->selectRaw('consolidated_id, SUM(net_value) as total_values, SUM(quantity) as total_quantities')
+            ->where('rn', '<=', 12)
+            ->groupBy('consolidated_id');
+
+        return DB::table('consolidated as c')
+            ->leftJoinSub($earningsCalc, 'earnings_calc', function ($join) {
+                $join->on('c.id', '=', 'earnings_calc.consolidated_id');
+            })
+            ->whereIn('c.id', $consolidatedIds)
+            ->selectRaw(
+                'c.id as consolidated_id,
+                CASE
+                    WHEN COALESCE(earnings_calc.total_quantities, 0) > 0
+                        AND c.average_purchase_price > 0
+                    THEN ((COALESCE(earnings_calc.total_values, 0) / earnings_calc.total_quantities)
+                          / c.average_purchase_price) * 100
+                    ELSE 0
+                END as yield_on_cost_monthly'
+            )
+            ->pluck('yield_on_cost_monthly', 'consolidated_id')
+            ->map(fn ($value) => (float) $value)
+            ->toArray();
     }
 
     private function buildSummary(array $crossing, Portfolio $portfolio): array
