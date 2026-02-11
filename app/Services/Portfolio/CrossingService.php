@@ -7,7 +7,6 @@ use App\Models\Consolidated;
 use App\Models\Portfolio;
 use App\Models\User;
 use App\Services\SubscriptionLimitService;
-use Illuminate\Support\Facades\DB;
 
 class CrossingService
 {
@@ -79,16 +78,14 @@ class CrossingService
                 return [$deletedAt, $customOrder];
             });
 
-        $yieldOnCostMonthlyByConsolidated = $this->buildYieldOnCostMonthlyMap(
-            $consolidated->pluck('id')->all()
-        );
+        $yieldMetricsByConsolidated = $this->buildYieldMetricsMap($consolidated);
 
         $crossing = PortfolioHelper::prepareCrossingData(
             $compositions,
             $consolidated,
             $compositionHistory,
             $portfolio,
-            $yieldOnCostMonthlyByConsolidated,
+            $yieldMetricsByConsolidated,
         );
         $summary = $this->buildSummary($crossing, $portfolio);
 
@@ -111,7 +108,10 @@ class CrossingService
             'to_buy_quantity_formatted',
             'profit',
             'profit_percentage',
+            'yield_monthly',
             'yield_on_cost_monthly',
+            'yield_annual',
+            'yield_on_cost_annual',
             'yoc_medal',
         ];
 
@@ -130,42 +130,79 @@ class CrossingService
         }, $crossing);
     }
 
-    private function buildYieldOnCostMonthlyMap(array $consolidatedIds): array
+    private function buildYieldMetricsMap($consolidated): array
     {
-        if (empty($consolidatedIds)) {
+        if ($consolidated->isEmpty()) {
             return [];
         }
 
-        $rankedEarnings = DB::table('earnings as e')
-            ->selectRaw(
-                'e.consolidated_id, e.net_value, e.quantity, ROW_NUMBER() OVER (PARTITION BY e.consolidated_id ORDER BY e.date DESC, e.id DESC) as rn'
-            )
-            ->whereIn('e.consolidated_id', $consolidatedIds);
+        $result = [];
 
-        $earningsCalc = DB::query()
-            ->fromSub($rankedEarnings, 'ranked_earnings')
-            ->selectRaw('consolidated_id, SUM(net_value) as total_values, SUM(quantity) as total_quantities')
-            ->where('rn', '<=', 12)
-            ->groupBy('consolidated_id');
+        foreach ($consolidated as $item) {
+            if (!$item->company_ticker_id) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
 
-        return DB::table('consolidated as c')
-            ->leftJoinSub($earningsCalc, 'earnings_calc', function ($join) {
-                $join->on('c.id', '=', 'earnings_calc.consolidated_id');
-            })
-            ->whereIn('c.id', $consolidatedIds)
-            ->selectRaw(
-                'c.id as consolidated_id,
-                CASE
-                    WHEN COALESCE(earnings_calc.total_quantities, 0) > 0
-                        AND c.average_purchase_price > 0
-                    THEN ((COALESCE(earnings_calc.total_values, 0) / earnings_calc.total_quantities)
-                          / c.average_purchase_price) * 100
-                    ELSE 0
-                END as yield_on_cost_monthly'
-            )
-            ->pluck('yield_on_cost_monthly', 'consolidated_id')
-            ->map(fn ($value) => (float) $value)
-            ->toArray();
+            $averagePurchasePrice = (float) ($item->average_purchase_price ?? 0);
+            if ($averagePurchasePrice <= 0) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $earnings = $item->earnings()
+                ->orderByDesc('date')
+                ->orderByDesc('id')
+                ->take(12)
+                ->get(['net_value', 'quantity']);
+
+            if ($earnings->isEmpty()) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $totalValues = (float) $earnings->sum('net_value');
+            $totalQuantities = (float) $earnings->sum('quantity');
+
+            if ($totalQuantities <= 0) {
+                $result[$item->id] = [
+                    'yield_monthly' => 0.0,
+                    'yield_on_cost_monthly' => 0.0,
+                    'yield_annual' => 0.0,
+                    'yield_on_cost_annual' => 0.0,
+                ];
+                continue;
+            }
+
+            $averagePerShare = $totalValues / $totalQuantities;
+            $currentPrice = (float) ($item->companyTicker?->last_price ?? $averagePurchasePrice);
+            $yieldMonthly = $currentPrice > 0 ? ($averagePerShare / $currentPrice) * 100 : 0.0;
+            $yieldOnCostMonthly = ($averagePerShare / $averagePurchasePrice) * 100;
+
+            $result[$item->id] = [
+                'yield_monthly' => $yieldMonthly,
+                'yield_on_cost_monthly' => $yieldOnCostMonthly,
+                'yield_annual' => $yieldMonthly * 12,
+                'yield_on_cost_annual' => $yieldOnCostMonthly * 12,
+            ];
+        }
+
+        return $result;
     }
 
     private function buildSummary(array $crossing, Portfolio $portfolio): array
