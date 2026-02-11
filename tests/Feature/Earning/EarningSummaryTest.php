@@ -139,4 +139,34 @@ class EarningSummaryTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data');
     }
+
+    public function test_cannot_get_summary_without_authentication(): void
+    {
+        $response = $this->getJson('/api/earnings/summary');
+
+        $response->assertStatus(401);
+    }
+
+    public function test_cannot_get_grouped_without_authentication(): void
+    {
+        $response = $this->getJson('/api/earnings/grouped?group=month');
+
+        $response->assertStatus(401);
+    }
+
+    public function test_returns_error_for_invalid_group_parameter(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+
+        $response = $this->getJson(
+            '/api/earnings/grouped?group=invalid',
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Agrupamento invalido.',
+            ]);
+    }
 }
