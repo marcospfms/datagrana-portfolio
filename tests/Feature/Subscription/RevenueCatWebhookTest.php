@@ -298,4 +298,66 @@ class RevenueCatWebhookTest extends TestCase
             'status' => 'processed',
         ]);
     }
+
+    public function test_billing_issue_logs_warning_and_returns_success(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = $this->webhookPayload('BILLING_ISSUE', [
+            'user_id' => $user->id,
+            'product_id' => 'starter_monthly',
+        ]);
+
+        $response = $this->postJson('/api/webhooks/revenuecat', $payload, $this->webhookHeaders());
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'data' => ['status' => 'success'],
+            ]);
+
+        $this->assertDatabaseHas('revenuecat_webhook_logs', [
+            'event_type' => 'BILLING_ISSUE',
+            'app_user_id' => (string) $user->id,
+            'status' => 'processed',
+        ]);
+    }
+
+    public function test_product_change_upgrade_applies_immediately(): void
+    {
+        $user = User::factory()->create();
+        $starterPlan = SubscriptionPlan::where('slug', 'starter')->firstOrFail();
+        $proPlan = SubscriptionPlan::where('slug', 'pro')->firstOrFail();
+
+        UserSubscription::factory()->create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $starterPlan->id,
+            'plan_slug' => 'starter',
+            'status' => 'active',
+            'is_paid' => true,
+            'revenuecat_original_transaction_id' => 'txn_starter_123',
+        ]);
+
+        $payload = $this->webhookPayload('PRODUCT_CHANGE', [
+            'user_id' => $user->id,
+            'product_id' => $proPlan->revenuecat_product_id,
+            'original_transaction_id' => 'txn_pro_456',
+        ]);
+
+        $response = $this->postJson('/api/webhooks/revenuecat', $payload, $this->webhookHeaders());
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('user_subscriptions', [
+            'user_id' => $user->id,
+            'plan_slug' => 'pro',
+            'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('user_subscriptions', [
+            'user_id' => $user->id,
+            'plan_slug' => 'starter',
+            'status' => 'canceled',
+        ]);
+    }
 }
