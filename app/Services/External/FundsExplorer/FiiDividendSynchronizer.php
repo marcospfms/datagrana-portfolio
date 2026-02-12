@@ -168,6 +168,11 @@ class FiiDividendSynchronizer
 
         $normalized = $this->normalizeDividends($fetchResult['rows'], $ticker->code);
 
+        Log::info('FundsExplorer: dividendos normalizados', [
+            'ticker' => $ticker->code,
+            'count' => count($normalized),
+        ]);
+
         if (empty($normalized)) {
             return [
                 'status' => 'no_data',
@@ -376,6 +381,15 @@ class FiiDividendSynchronizer
     private function saveDividend(CompanyTicker $ticker, EarningType $earningType, array $data): bool
     {
         try {
+            Log::info('FundsExplorer: verificando dividendo', [
+                'ticker' => $ticker->code,
+                'earning_type_id' => $earningType->id,
+                'approved_date' => $data['com_date'] ?? null,
+                'payment_date' => $data['payment_date'] ?? null,
+                'value' => $data['value_per_quota'] ?? null,
+                'type' => $data['type'] ?? null,
+            ]);
+
             $existing = CompanyEarning::where('company_ticker_id', $ticker->id)
                 ->where('earning_type_id', $earningType->id)
                 ->where('approved_date', $data['com_date'])
@@ -389,8 +403,25 @@ class FiiDividendSynchronizer
                         'origin' => 'crawler_fundsexplorer',
                     ]);
 
+                    Log::info('FundsExplorer: dividendo atualizado (valor diferente)', [
+                        'ticker' => $ticker->code,
+                        'company_earning_id' => $existing->id,
+                        'approved_date' => $existing->approved_date,
+                        'payment_date' => $existing->payment_date,
+                        'old_value' => $existing->value,
+                        'new_value' => $data['value_per_quota'],
+                    ]);
+
                     return true;
                 }
+
+                Log::info('FundsExplorer: dividendo duplicado (mesmas datas e valor)', [
+                    'ticker' => $ticker->code,
+                    'company_earning_id' => $existing->id,
+                    'approved_date' => $existing->approved_date,
+                    'payment_date' => $existing->payment_date,
+                    'value' => $existing->value,
+                ]);
 
                 return false;
             }
@@ -403,6 +434,13 @@ class FiiDividendSynchronizer
                 'value' => $data['value_per_quota'],
                 'approved_date' => $data['com_date'],
                 'payment_date' => $data['payment_date'],
+            ]);
+
+            Log::info('FundsExplorer: dividendo inserido', [
+                'ticker' => $ticker->code,
+                'approved_date' => $data['com_date'],
+                'payment_date' => $data['payment_date'],
+                'value' => $data['value_per_quota'],
             ]);
 
             return true;

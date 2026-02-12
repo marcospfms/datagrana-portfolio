@@ -173,11 +173,14 @@ class SubscriptionLimitService
             return false;
         }
 
-        if (! $subscription->isActive() && ! $subscription->isTrialing()) {
+        $isTrialActive = $subscription->isTrialing()
+            || ($subscription->trial_ends_at && now()->isBefore($subscription->trial_ends_at));
+
+        if (! $subscription->isActive() && ! $isTrialActive) {
             return false;
         }
 
-        return $subscription->is_paid || $subscription->isTrialing();
+        return $subscription->is_paid || $isTrialActive;
     }
 
     public function ensureCanUseAutomations(User $user): void

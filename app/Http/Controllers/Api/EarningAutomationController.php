@@ -25,27 +25,95 @@ class EarningAutomationController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $perPage = max(1, (int) $request->get('per_page', 10));
-        $currentPage = (int) $request->get('page', 1);
+        $query = $this->automationService->pendingCompanyEarningsQuery($request->user());
 
-        $paginated = $this->automationService
-            ->paginateHydratedPendingPayments($request->user(), $perPage, $currentPage);
+        if (! $query) {
+            return $this->sendResponse([
+                'data' => [],
+                'summary' => [
+                    'count_consolidate' => 0,
+                    'count_not_registered' => 0,
+                    'count_divergences' => 0,
+                ],
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'total_events' => 0,
+                ],
+            ]);
+        }
 
-        $summary = $this->automationService->summarizePayments($paginated->getCollection());
+        $totalEvents = (clone $query)->count();
 
-        $paginated->setCollection(collect($summary['pagamentos']));
+        $dateGroups = (clone $query)
+            ->selectRaw('DATE(company_earnings.payment_date) as payment_date')
+            ->groupBy('payment_date')
+            ->orderBy('payment_date', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $dates = collect($dateGroups->items())
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return $item['payment_date'] ?? null;
+                }
+
+                return $item->payment_date ?? null;
+            })
+            ->filter()
+            ->values();
+
+        $grouped = collect();
+        $summary = null;
+
+        if ($dates->isNotEmpty()) {
+            $earningsByDates = (clone $query)
+                ->where(function ($builder) use ($dates) {
+                    foreach ($dates as $date) {
+                        $builder->orWhereDate('company_earnings.payment_date', $date);
+                    }
+                })
+                ->get();
+
+            $hydrated = $this->automationService
+                ->hydrateEarningsStatus($request->user(), $earningsByDates, true);
+
+            $summary = $this->automationService->summarizePayments($hydrated);
+            $filtered = collect($summary['pagamentos']);
+
+            $groupedMap = $filtered
+                ->groupBy(fn ($item) => $item->payment_date?->toDateString() ?? '0000-00-00')
+                ->map(fn ($items, $date) => [
+                    'date' => $date,
+                    'data' => AutomationEarningResource::collection($items)->values(),
+                ]);
+
+            $grouped = $dates
+                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'data' => []]))
+                ->values();
+        }
+
+        $summary = $summary ?? [
+            'countConsolidate' => 0,
+            'countNotRegistered' => 0,
+            'countDivergences' => 0,
+        ];
 
         return $this->sendResponse([
-            'data' => AutomationEarningResource::collection($paginated->items()),
+            'data' => $grouped,
             'summary' => [
                 'count_consolidate' => $summary['countConsolidate'],
                 'count_not_registered' => $summary['countNotRegistered'],
                 'count_divergences' => $summary['countDivergences'],
             ],
             'meta' => [
-                'current_page' => $paginated->currentPage(),
-                'last_page' => $paginated->lastPage(),
-                'per_page' => $paginated->perPage(),
-                'total' => $paginated->total(),
+                'current_page' => $dateGroups->currentPage(),
+                'last_page' => $dateGroups->lastPage(),
+                'per_page' => $dateGroups->perPage(),
+                'total' => $dateGroups->total(),
+                'total_events' => $totalEvents,
             ],
         ]);
     }

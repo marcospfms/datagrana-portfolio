@@ -280,6 +280,11 @@ class EarningAutomationService
         return $query;
     }
 
+    public function pendingCompanyEarningsQuery(User $user, ?array $companyEarningIds = null): ?Builder
+    {
+        return $this->buildPendingCompanyEarningsQuery($user, $companyEarningIds);
+    }
+
     public function getQuantityUntilApprovedDate(
         User $user,
         int $companyTickerId,
