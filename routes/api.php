@@ -90,6 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('portfolios', PortfolioController::class)->except(['store']);
     Route::middleware('subscription.limit:portfolio')->post('/portfolios', [PortfolioController::class, 'store'])
         ->name('portfolios.store');
+    Route::get('/portfolios/{portfolio}/history', [PortfolioController::class, 'history'])
+        ->name('portfolios.history');
     Route::get('/portfolios/{portfolio}/crossing', [PortfolioController::class, 'crossing'])
         ->name('portfolios.crossing');
     Route::middleware('subscription.limit:composition')

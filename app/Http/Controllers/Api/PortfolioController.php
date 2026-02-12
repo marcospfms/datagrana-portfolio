@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Portfolio\PortfolioHistoryIndexRequest;
 use App\Http\Requests\Portfolio\StorePortfolioRequest;
 use App\Http\Requests\Portfolio\UpdatePortfolioRequest;
+use App\Http\Resources\CompositionHistoryResource;
 use App\Http\Resources\PortfolioResource;
+use App\Models\CompositionHistory;
 use App\Models\Portfolio;
 use App\Services\Portfolio\CrossingService;
 use App\Services\SubscriptionLimitService;
@@ -137,6 +140,116 @@ class PortfolioController extends BaseController
             'portfolio' => new PortfolioResource($portfolio),
             'crossing' => $result['crossing'] ?? [],
             'summary' => $result['summary'] ?? [],
+        ]);
+    }
+
+    public function history(
+        Portfolio $portfolio,
+        PortfolioHistoryIndexRequest $request,
+        SubscriptionLimitService $limitService
+    ): JsonResponse {
+        $this->authorize('view', $portfolio);
+        $limitService->ensureCanViewCompositionHistory($request->user());
+
+        $perPage = 5;
+
+        $query = CompositionHistory::withTrashed()
+            ->where('portfolio_id', $portfolio->id)
+            ->with([
+                'treasure.treasureCategory',
+                'companyTicker.company.companyCategory',
+            ]);
+
+        if ($request->filled('search')) {
+            $search = strtoupper((string) $request->input('search'));
+
+            $query->where(function ($builder) use ($search) {
+                $builder->whereHas('companyTicker', function ($tickerQuery) use ($search) {
+                    $tickerQuery->where('code', 'like', "%{$search}%");
+                })->orWhereHas('treasure', function ($treasureQuery) use ($search) {
+                    $treasureQuery->where('code', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $totalEvents = (clone $query)->count();
+
+        $dateGroups = (clone $query)
+            ->selectRaw('DATE(COALESCE(deleted_at, created_at)) as history_date')
+            ->groupBy('history_date')
+            ->orderBy('history_date', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $dates = collect($dateGroups->items())
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    return $item['history_date'] ?? null;
+                }
+
+                return $item->history_date ?? null;
+            })
+            ->filter()
+            ->values();
+
+        $grouped = collect();
+
+        if ($dates->isNotEmpty()) {
+            $historyByPageDates = (clone $query)
+                ->where(function ($builder) use ($dates) {
+                    foreach ($dates as $date) {
+                        $builder->orWhere(function ($innerQuery) use ($date) {
+                            $innerQuery->whereDate('deleted_at', $date)
+                                ->orWhere(function ($fallbackQuery) use ($date) {
+                                    $fallbackQuery->whereNull('deleted_at')
+                                        ->whereDate('created_at', $date);
+                                });
+                        });
+                    }
+                })
+                ->get();
+
+            $sorted = $historyByPageDates->sort(function (CompositionHistory $a, CompositionHistory $b) {
+                $dateA = ($a->deleted_at ?? $a->created_at)?->toDateString() ?? '';
+                $dateB = ($b->deleted_at ?? $b->created_at)?->toDateString() ?? '';
+
+                if ($dateA !== $dateB) {
+                    return $dateA < $dateB ? 1 : -1;
+                }
+
+                $codeA = $a->companyTicker?->code ?? $a->treasure?->code ?? '';
+                $codeB = $b->companyTicker?->code ?? $b->treasure?->code ?? '';
+
+                return strcmp($codeA, $codeB);
+            })->values();
+
+            $groupedMap = $sorted
+                ->groupBy(fn (CompositionHistory $history) => ($history->deleted_at ?? $history->created_at)?->toDateString() ?? '0000-00-00')
+                ->map(fn ($items, $date) => [
+                    'date' => $date,
+                    'data' => CompositionHistoryResource::collection($items)->values(),
+                ]);
+
+            $grouped = $dates
+                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'data' => []]))
+                ->values();
+        }
+
+        return $this->sendResponse([
+            'data' => $grouped,
+            'links' => [
+                'first' => $dateGroups->url(1),
+                'last' => $dateGroups->url($dateGroups->lastPage()),
+                'prev' => $dateGroups->previousPageUrl(),
+                'next' => $dateGroups->nextPageUrl(),
+            ],
+            'meta' => [
+                'current_page' => $dateGroups->currentPage(),
+                'last_page' => $dateGroups->lastPage(),
+                'per_page' => $dateGroups->perPage(),
+                'total' => $dateGroups->total(),
+                'total_events' => $totalEvents,
+            ],
         ]);
     }
 
