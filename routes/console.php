@@ -22,4 +22,11 @@ if (app()->environment('production')) {
     Schedule::command('app:sync-brapi-stock-list --limit=100 --pages=999')
         ->cron('0 4 * * 1')
         ->withoutOverlapping();
+
+    // Dividendos FII via Funds Explorer - diariamente 08:30
+    Schedule::command('app:sync-fundsexplorer-fii-dividends --only-active --limit=50 --window-days=30 --min-delay=60 --max-delay=120')
+        ->dailyAt('08:30')
+        ->withoutOverlapping()
+        ->appendOutputTo('/proc/1/fd/1')
+        ->runInBackground();
 }

@@ -162,7 +162,7 @@ Serviços externos documentados em `docs/roadmap-v8-scheduled-tasks-migration.md
 | **MFinance** | Cotações em tempo real (ações, FIIs) | Primário |
 | **Brapi** | Lista de ativos, cotações, históricos, fallback | Secundário |
 | **AlphaVantage** | Fallback manual (não agendado) | Opcional |
-| **Investidor10** | Scraping de dividendos de FIIs | Crawler |
+| **Funds Explorer (AJAX)** | Sincronização de dividendos de FIIs (`company_earnings`) | Crawler |
 
 Esses serviços alimentam:
 - `company_tickers.last_price` e `last_price_updated`

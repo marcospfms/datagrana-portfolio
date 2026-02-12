@@ -2,7 +2,7 @@
 
 **Status:** Planejamento
 **Dependencias:** V1-V7 (completos)
-**Objetivo:** Migrar 4 comandos agendados do `datagrana-web` (legado) para `datagrana-portfolio` (Laravel 12)
+**Objetivo:** Migrar comandos agendados do `datagrana-web` (legado) para `datagrana-portfolio` (Laravel 12)
 
 ---
 
@@ -18,8 +18,9 @@ AlphaVantage fica como fallback opcional (nao agendado).
 | 1 | `app:reactivate-tickers` | Cada 45min | Media |
 | 2 | `app:update-mfinance-ticker-prices` | Cada 1min | Alta |
 | 3 | `app:sync-brapi-stock-list` | Segunda 04:00 | Media |
+| 4 | `app:sync-fundsexplorer-fii-dividends` | Diario 08:30 | Media |
 
-> **Nota:** O comando `app:crawl-fii-dividends` foi descontinuado. O site Investidor10 mudou o layout, quebrando o crawler. Buscar APIs alternativas para dividendos de FIIs (ex: Brapi, StatusInvest API, ou CVM dados abertos).
+> **Atualizacao (2026-02-12):** O crawler antigo baseado em Investidor10 permanece descontinuado. O fluxo de dividendos FII foi substituido por coleta via endpoint AJAX do Funds Explorer (`/wp-admin/admin-ajax.php`), com janela de atualizacao por ticker e atraso aleatorio entre requests para reduzir risco de bloqueio.
 
 ---
 
@@ -638,7 +639,7 @@ php artisan schedule:list
 | **Aderencia ao padrao de Services (docs/patterns/services.md)** | O padrao do portfolio define que Services devem: usar DI no construtor, retornar tipos explicitos, usar exceptions customizadas, usar DB::transaction para operacoes criticas | Os services legado ja seguem DI e transactions. Adicionar return types explicitos e considerar exceptions customizadas (ex: `ApiRateLimitException`, `TickerPriceUnavailableException`). |
 | **Logging estruturado** | Commands usam `Log::info/warning/error` sem contexto padronizado | Definir formato padrao de contexto: `['command' => ..., 'ticker' => ..., 'source' => ..., 'duration_ms' => ...]`. |
 | **Metricas de execucao** | Nao ha tracking de tempo de execucao nem taxa de sucesso por command | Possibilidade futura: tabela `job_execution_logs` ou integracao com monitoring externo. |
-| **API de dividendos FII** | Buscar API alternativa para dividendos de FIIs (crawler descontinuado) | Possibilidades: Brapi (pago), StatusInvest API, CVM dados abertos, ou B3 dados publicos. |
+| **API de dividendos FII** | Integracao ativa via Funds Explorer AJAX (`app:sync-fundsexplorer-fii-dividends`) | Monitorar mudancas de `action`/`nonce` no HTML e manter fallback manual (Insomnia/HTML bruto) quando necessario. |
 
 ### Aderencia aos padroes do portfolio (docs/patterns/)
 
