@@ -634,6 +634,11 @@ O `Tests\TestCase` base fornece helpers:
 
 ## Historico de Implementacoes
 
+### Execucao recente (Portfolio History)
+
+- ✅ Tests: `229 passed (907 assertions)`
+- ⏱️ Duration: `34.85s`
+
 ### Fase 1 - Modulo Earnings (V8) - 12 testes adicionados
 
 **Arquivo:** `tests/Feature/Earning/EarningShowTest.php` (NOVO)
