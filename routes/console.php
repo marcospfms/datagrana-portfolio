@@ -9,6 +9,7 @@ if (app()->environment('production')) {
     Schedule::command('app:update-mfinance-ticker-prices --only-active --stale-minutes=30 --limit=50')
         ->everyMinute()
         ->withoutOverlapping()
+        ->appendOutputTo('/proc/1/fd/1')
         ->runInBackground();
 
     // Reativacao - cada 45 minutos (0min e 45min de cada hora)
