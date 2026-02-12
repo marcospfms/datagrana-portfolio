@@ -86,6 +86,9 @@ class MFinanceTickerPriceUpdater
             $reference = $ticker->company?->companyCategory?->reference;
 
             if ($reference === 'BDR') {
+                Log::info('Ticker direcionado para fallback Brapi por categoria BDR', [
+                    'ticker' => $ticker->code,
+                ]);
                 $this->handleFallback($ticker, $summary);
                 return;
             }
@@ -105,6 +108,11 @@ class MFinanceTickerPriceUpdater
 
             if (!$response->isSuccess()) {
                 if ($response->getStatusCode() === 404) {
+                    Log::info('Ticker nao encontrado na m_finance (404); utilizando fallback Brapi', [
+                        'ticker' => $ticker->code,
+                        'segment' => $segment,
+                        'route' => $response->getUrl(),
+                    ]);
                     $this->handleFallback($ticker, $summary);
                     return;
                 }
@@ -124,6 +132,13 @@ class MFinanceTickerPriceUpdater
 
                 return;
             }
+
+            Log::info('m_finance quote retornou com sucesso', [
+                'ticker' => $ticker->code,
+                'segment' => $segment,
+                'route' => $response->getUrl(),
+                'status' => $response->getStatusCode(),
+            ]);
 
             $payload = $response->getData();
 
@@ -165,6 +180,10 @@ class MFinanceTickerPriceUpdater
 
     private function handleFallback(CompanyTicker $ticker, array &$summary): void
     {
+        Log::info('Executando fallback Brapi para ticker', [
+            'ticker' => $ticker->code,
+        ]);
+
         $fallbackSummary = $this->brapiTickerPriceUpdater->updateTickers(collect([$ticker]));
 
         $summary['success'] += $fallbackSummary['success'];

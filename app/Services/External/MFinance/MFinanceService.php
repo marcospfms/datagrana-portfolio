@@ -18,6 +18,20 @@ class MFinanceService
     private bool $verifySsl;
     private ?ApiCredential $credential;
 
+    private function maskToken(?string $token): ?string
+    {
+        if (!$token) {
+            return null;
+        }
+
+        $length = strlen($token);
+        if ($length <= 8) {
+            return str_repeat('*', $length);
+        }
+
+        return substr($token, 0, 4) . str_repeat('*', max($length - 8, 1)) . substr($token, -4);
+    }
+
     public function __construct(?string $token = null)
     {
         $this->credential = null;
@@ -46,6 +60,14 @@ class MFinanceService
         $this->token = $token ?? $this->credential?->token;
         $this->timeout = 30;
         $this->verifySsl = true;
+
+        Log::info('MFinanceService inicializado', [
+            'credential_key' => $this->credential?->key ?? 'not_found',
+            'base_url' => $this->baseUrl,
+            'has_token' => $this->token !== null && $this->token !== '',
+            'token_length' => $this->token ? strlen($this->token) : 0,
+            'token_masked' => $this->maskToken($this->token),
+        ]);
     }
 
     private function getRequest(?int $timeout = null)
@@ -107,6 +129,13 @@ class MFinanceService
                 $url .= '?' . http_build_query($queryParams);
             }
 
+            Log::info('MFinance requisicao preparada', [
+                'method' => strtoupper($method),
+                'route' => rtrim($this->baseUrl, '/') . $url,
+                'has_token' => $this->token !== null && $this->token !== '',
+                'token_masked' => $this->maskToken($this->token),
+            ]);
+
             $request = $this->getRequest($timeout);
             $response = match (strtoupper($method)) {
                 'GET' => $request->get($url),
@@ -120,6 +149,11 @@ class MFinanceService
 
             if ($response->successful()) {
                 $this->incrementRequestCounter();
+                Log::info('MFinance requisicao concluida com sucesso', [
+                    'method' => strtoupper($method),
+                    'route' => $url,
+                    'status' => $response->status(),
+                ]);
 
                 return ApiResponse::success($response->json(), $response->status(), $url);
             }
@@ -128,6 +162,15 @@ class MFinanceService
         } catch (RequestException $exception) {
             $response = $exception->response;
             $url = $response->effectiveUri()->__toString() ?: $url;
+
+             Log::warning('MFinance requisicao retornou erro HTTP', [
+                'method' => strtoupper($method),
+                'route' => $url,
+                'status' => $response->status(),
+                'has_token' => $this->token !== null && $this->token !== '',
+                'token_masked' => $this->maskToken($this->token),
+                'body' => $response->body(),
+            ]);
 
             return ApiResponse::error($exception->getMessage(), $exception->getCode(), $url, $response);
         } catch (Exception $exception) {
