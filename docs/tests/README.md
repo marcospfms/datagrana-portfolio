@@ -14,7 +14,7 @@ Este arquivo registra cada teste criado, seu objetivo e cenarios cobertos.
 | Consolidated (V4) | 9 | 29 | 100% | ✅ Completo |
 | Portfolio (V5) | 8 | 27 | 100% | ✅ Completo |
 | Crossing (V6) | 2 | 17 | 100% | ✅ Completo |
-| Subscription (V7) | 7 | 45 | 100% | ✅ Completo |
+| Subscription (V7) | 7 | 48 | 100% | ✅ Completo |
 | Earnings (V8) | 7 | 25 | 100% | ✅ Completo |
 | Health | 1 | 1 | 100% | ✅ Completo |
 | **Total** | **50** | **224** | 100% | ✅ |
@@ -630,7 +630,7 @@ O `Tests\TestCase` base fornece helpers:
 
 ---
 
-*Ultima atualizacao: Fevereiro 2026 - 221 testes implementados*
+*Ultima atualizacao: Fevereiro 2026 - 224 testes implementados (892 assertions)*
 
 ## Historico de Implementacoes
 
@@ -661,7 +661,7 @@ O `Tests\TestCase` base fornece helpers:
 - ✅ `test_cannot_get_grouped_without_authentication` - Auth obrigatoria (401)
 - ✅ `test_returns_error_for_invalid_group_parameter` - Validacao de parametro (422)
 
-### Fase 2 - Modulo Subscription (V7) - 4 testes adicionados
+### Fase 2 - Modulo Subscription (V7) - 5 testes adicionados
 
 **Arquivo:** `tests/Feature/Subscription/SubscriptionResourceLocksTest.php` (NOVO)
 - ✅ `test_portfolio_resource_shows_is_locked_true_when_over_limit` - Portfolio bloqueado acima do limite
@@ -687,4 +687,4 @@ O `Tests\TestCase` base fornece helpers:
 
 ## ✅ Cobertura Completa
 
-Todos os 221 testes estao implementados e documentados. Nao ha gaps de cobertura pendentes.
+Todos os 224 testes estao implementados e documentados. Nao ha gaps de cobertura pendentes.
