@@ -27,19 +27,13 @@ class BrapiService
         $this->credential = null;
         $credentialLoadFailed = false;
 
-        if (!app()->configurationIsCached() && !file_exists(base_path('.env'))) {
+        try {
+            $this->credential = ApiCredential::where('key', 'brapi_dev')->first();
+        } catch (Throwable $exception) {
+            Log::info('BrapiService: ignorando carregamento de credenciais pois o banco ainda nao esta disponivel.', [
+                'exception' => $exception->getMessage(),
+            ]);
             $credentialLoadFailed = true;
-        }
-
-        if (!$credentialLoadFailed) {
-            try {
-                $this->credential = ApiCredential::where('key', 'brapi_dev')->first();
-            } catch (Throwable $exception) {
-                Log::info('BrapiService: ignorando carregamento de credenciais pois o banco ainda nao esta disponivel.', [
-                    'exception' => $exception->getMessage(),
-                ]);
-                $credentialLoadFailed = true;
-            }
         }
 
         if (!$this->credential && !$credentialLoadFailed) {
@@ -47,7 +41,9 @@ class BrapiService
         }
 
         $this->baseUrl = $this->credential?->url_base ?? 'https://brapi.dev/api';
-        $this->token = $token ?? $this->credential?->token;
+        $resolvedToken = $token ?? $this->credential?->token;
+        $resolvedToken = is_string($resolvedToken) ? trim($resolvedToken) : null;
+        $this->token = $resolvedToken !== '' ? $resolvedToken : null;
         $this->timeout = 30;
         $this->verifySsl = true;
     }
@@ -62,9 +58,7 @@ class BrapiService
             ]);
 
         if ($this->token) {
-            $request->withHeaders([
-                'Authorization' => 'Bearer ' . $this->token,
-            ]);
+            $request = $request->withToken($this->token);
         }
 
         return $request;
