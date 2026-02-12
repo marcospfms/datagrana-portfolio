@@ -165,6 +165,31 @@ class SubscriptionLimitService
         return $subscription->hasFeature('allow_composition_history');
     }
 
+    public function canUseAutomations(User $user): bool
+    {
+        $subscription = $this->getActiveSubscription($user);
+
+        if (! $subscription->hasFeature('allow_automations')) {
+            return false;
+        }
+
+        if (! $subscription->isActive() && ! $subscription->isTrialing()) {
+            return false;
+        }
+
+        return $subscription->is_paid || $subscription->isTrialing();
+    }
+
+    public function ensureCanUseAutomations(User $user): void
+    {
+        if (! $this->canUseAutomations($user)) {
+            $subscription = $this->getActiveSubscription($user);
+            throw new SubscriptionLimitExceededException(
+                "Seu plano {$subscription->plan_name} nao permite usar automacoes. Faca upgrade para continuar."
+            );
+        }
+    }
+
     public function ensureCanViewCompositionHistory(User $user): void
     {
         if (!$this->canViewCompositionHistory($user)) {

@@ -16,6 +16,7 @@ Este arquivo registra cada teste criado, seu objetivo e cenarios cobertos.
 | Crossing (V6) | 2 | 17 | 100% | ✅ Completo |
 | Subscription (V7) | 7 | 48 | 100% | ✅ Completo |
 | Earnings (V8) | 7 | 25 | 100% | ✅ Completo |
+| Automations (V10) | 0 | 0 | 0% | ⚠️ Pendente |
 | Health | 1 | 1 | 100% | ✅ Completo |
 | **Total** | **50** | **224** | 100% | ✅ |
 
@@ -198,6 +199,68 @@ Valida detalhes do ativo.
 | `test_can_view_asset_details` | Retorna dados completos do ativo |
 | `test_returns_404_for_nonexistent_asset` | Ativo inexistente retorna 404 |
 | `test_cannot_view_asset_without_authentication` | Sem auth retorna 401 |
+
+---
+
+## Automations (V10)
+
+### Testes executados
+
+Nenhum teste foi executado para o modulo de automacoes ainda.
+
+### Testes pendentes (planejados)
+
+#### `tests/Feature/Automation/EarningAutomationIndexTest.php`
+| Metodo | Cenario |
+|--------|---------|
+| `test_can_list_automations_for_user` | Lista apenas proventos elegiveis do usuario |
+| `test_omits_items_without_quantity_until_approved` | Itens sem quantidade elegivel sao filtrados |
+| `test_returns_counts_by_status` | Contadores de consolidar/nao-registrado/divergencia |
+| `test_cannot_list_without_authentication` | Sem auth retorna 401 |
+
+#### `tests/Feature/Automation/EarningAutomationConsolidateTest.php`
+| Metodo | Cenario |
+|--------|---------|
+| `test_can_consolidate_exact_match` | Vincula company_earning em earning existente |
+| `test_cannot_consolidate_when_no_match` | Retorna 422 quando nao ha match |
+| `test_cannot_consolidate_without_paid_or_trial` | Bloqueio por plano |
+| `test_cannot_consolidate_other_user_earning` | Escopo de seguranca por usuario |
+
+#### `tests/Feature/Automation/EarningAutomationRegisterTest.php`
+| Metodo | Cenario |
+|--------|---------|
+| `test_can_register_when_not_found` | Cria earning automatico |
+| `test_requires_account_id` | Validacao 422 |
+| `test_cannot_register_with_other_user_account` | Bloqueio por conta |
+| `test_cannot_register_without_paid_or_trial` | Bloqueio por plano |
+
+#### `tests/Feature/Automation/EarningAutomationDivergenceTest.php`
+| Metodo | Cenario |
+|--------|---------|
+| `test_can_fix_divergence_with_update` | Atualiza valores e vinculo |
+| `test_can_fix_divergence_keep_original` | Apenas vincula, mantendo valores |
+| `test_requires_earning_id` | Validacao 422 |
+| `test_cannot_fix_divergence_without_paid_or_trial` | Bloqueio por plano |
+
+#### `tests/Feature/Automation/EarningAutomationBatchTest.php`
+| Metodo | Cenario |
+|--------|---------|
+| `test_can_consolidate_batch` | Consolida todos os matchs pendentes |
+| `test_can_register_batch` | Registra todos os nao-registrados |
+| `test_register_batch_requires_account` | Validacao 422 |
+| `test_batch_actions_require_paid_or_trial` | Bloqueio por plano |
+
+---
+
+## Revisao de Gaps de Validacao (Automations)
+
+Os seguintes pontos ainda nao estao cobertos por testes e devem ser adicionados:
+
+- Validacao de escopo do `company_earning` (nao permitir consolidar/registrar/divergir item fora do escopo do usuario).
+- Validacao de regra premium: trial e pago liberam, free bloqueia.
+- Validacao de quantidade historica (`approved_date`) para garantir que o calculo usa transacoes ate a data.
+- Validacao de imposto por tipo de provento (`income_tax`) no calculo de valores.
+- Validacao de `register_batch` ignorando itens com divergencias ou ja registrados.
 
 ---
 

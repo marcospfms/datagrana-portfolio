@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             CompanyCategorySeeder::class,
             EarningTypeSeeder::class,
             SubscriptionPlanSeeder::class,
+            SubscriptionSnapshotSeeder::class,
         ]);
     }
 }

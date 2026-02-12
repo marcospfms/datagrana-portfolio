@@ -47,4 +47,53 @@ class CompanyEarning extends Model
     {
         return $this->hasMany(Earning::class);
     }
+
+    public function getIncomeTaxAttribute(): float
+    {
+        $earningTypeName = $this->earningType?->name;
+
+        if (! $earningTypeName) {
+            return 1.0;
+        }
+
+        $typeCompanyDividends = [
+            'Amortização' => 'AMORT',
+            'Rend. Tributado' => 'RENTRIB',
+            'Rendimento' => 'REN',
+            'Dividendo' => 'DIV',
+            'JCP' => 'JCP',
+        ];
+
+        $typeIncomeTax = [
+            'AMORT' => 1.0,
+            'RENTRIB' => 0.85,
+            'REN' => 1.0,
+            'DIV' => 1.0,
+            'JCP' => 0.85,
+        ];
+
+        $taxKey = $typeCompanyDividends[$earningTypeName] ?? null;
+
+        if (! $taxKey) {
+            return 1.0;
+        }
+
+        return (float) ($typeIncomeTax[$taxKey] ?? 1.0);
+    }
+
+    public function calculateValues(float $quantity): array
+    {
+        $grossValue = (float) $this->value * $quantity;
+        $incomeTax = $this->income_tax;
+        $netValue = $grossValue * $incomeTax;
+        $taxValue = $grossValue - $netValue;
+
+        return [
+            'gross_value' => $grossValue,
+            'net_value' => $netValue,
+            'income_tax' => $incomeTax,
+            'tax' => $taxValue,
+            'quantity' => $quantity,
+        ];
+    }
 }
