@@ -37,19 +37,13 @@ class MFinanceService
         $this->credential = null;
         $credentialLoadFailed = false;
 
-        if (!app()->configurationIsCached() && !file_exists(base_path('.env'))) {
+        try {
+            $this->credential = ApiCredential::where('key', 'm_finance')->first();
+        } catch (Throwable $exception) {
+            Log::info('MFinanceService: ignorando carregamento de credenciais pois o banco ainda nao esta disponivel.', [
+                'exception' => $exception->getMessage(),
+            ]);
             $credentialLoadFailed = true;
-        }
-
-        if (!$credentialLoadFailed) {
-            try {
-                $this->credential = ApiCredential::where('key', 'm_finance')->first();
-            } catch (Throwable $exception) {
-                Log::info('MFinanceService: ignorando carregamento de credenciais pois o banco ainda nao esta disponivel.', [
-                    'exception' => $exception->getMessage(),
-                ]);
-                $credentialLoadFailed = true;
-            }
         }
 
         if (!$this->credential && !$credentialLoadFailed) {
