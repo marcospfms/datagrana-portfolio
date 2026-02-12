@@ -26,16 +26,8 @@ class UpdateTickerPricesCommand extends Command
     public function handle(): int
     {
         try {
-            Log::info('Iniciando atualizacao de tickers via m_finance', [
-                'limit' => (int) $this->option('limit'),
-                'only_active' => (bool) $this->option('only-active'),
-                'stale_minutes' => (int) $this->option('stale-minutes'),
-                'force' => (bool) $this->option('force'),
-            ]);
-
             if (!TradingHelper::isTradingWindow((bool) $this->option('force'))) {
                 $this->info('Janela de execucao nao atendida (dias uteis entre 08:00 e 18:00). Use --force para sobrescrever.');
-                Log::info('Atualizacao de tickers ignorada fora da janela de pregao');
 
                 return self::SUCCESS;
             }
@@ -48,14 +40,12 @@ class UpdateTickerPricesCommand extends Command
 
             if ($tickers->isEmpty()) {
                 $this->info('Nenhum ticker elegivel encontrado para atualizacao.');
-                Log::info('Nenhum ticker elegivel para atualizacao via m_finance');
 
                 return self::SUCCESS;
             }
 
             $this->info("Processando {$tickers->count()} ticker(s) com m_finance...");
             $summary = $this->priceUpdater->updateTickers($tickers);
-            Log::info('Resumo da atualizacao de tickers via m_finance', $summary);
 
             $this->outputSummary($summary);
 

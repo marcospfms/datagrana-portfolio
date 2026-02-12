@@ -22,20 +22,6 @@ class BrapiService
     private bool $verifySsl;
     private ?ApiCredential $credential;
 
-    private function maskToken(?string $token): ?string
-    {
-        if (!$token) {
-            return null;
-        }
-
-        $length = strlen($token);
-        if ($length <= 8) {
-            return str_repeat('*', $length);
-        }
-
-        return substr($token, 0, 4) . str_repeat('*', max($length - 8, 1)) . substr($token, -4);
-    }
-
     public function __construct(?string $token = null)
     {
         $this->credential = null;
@@ -60,14 +46,6 @@ class BrapiService
         $this->token = $resolvedToken !== '' ? $resolvedToken : null;
         $this->timeout = 30;
         $this->verifySsl = true;
-
-        Log::info('BrapiService inicializado', [
-            'credential_key' => $this->credential?->key ?? 'not_found',
-            'base_url' => $this->baseUrl,
-            'has_token' => $this->token !== null,
-            'token_length' => $this->token ? strlen($this->token) : 0,
-            'token_masked' => $this->maskToken($this->token),
-        ]);
     }
 
     private function getBrapiRequest(?int $timeout = null)
@@ -207,13 +185,6 @@ class BrapiService
                 $url .= '?' . http_build_query($queryParams);
             }
 
-            Log::info('Brapi requisicao preparada', [
-                'method' => strtoupper($method),
-                'route' => rtrim($this->baseUrl, '/') . $url,
-                'has_token' => $this->token !== null,
-                'token_masked' => $this->maskToken($this->token),
-            ]);
-
             $request = $this->getBrapiRequest($timeout);
             $response = match (strtoupper($method)) {
                 'GET' => $request->get($url),
@@ -227,11 +198,6 @@ class BrapiService
 
             if ($response->successful()) {
                 $this->incrementRequestCounter();
-                Log::info('Brapi requisicao concluida com sucesso', [
-                    'method' => strtoupper($method),
-                    'route' => $url,
-                    'status' => $response->status(),
-                ]);
 
                 return ApiResponse::success($response->json(), $response->status(), $url);
             }
@@ -240,24 +206,6 @@ class BrapiService
         } catch (RequestException $exception) {
             $response = $exception->response;
             $url = $response->effectiveUri()->__toString() ?: $url;
-
-            if ($response->status() === 401) {
-                Log::warning('Brapi retornou 401', [
-                    'route' => $url,
-                    'has_token' => $this->token !== null,
-                    'token_length' => $this->token ? strlen($this->token) : 0,
-                    'token_masked' => $this->maskToken($this->token),
-                    'body' => $response->body(),
-                ]);
-            }
-
-            Log::warning('Brapi requisicao retornou erro HTTP', [
-                'method' => strtoupper($method),
-                'route' => $url,
-                'status' => $response->status(),
-                'has_token' => $this->token !== null,
-                'token_masked' => $this->maskToken($this->token),
-            ]);
 
             return ApiResponse::error($exception->getMessage(), $exception->getCode(), $url, $exception->response);
         } catch (Exception $exception) {
