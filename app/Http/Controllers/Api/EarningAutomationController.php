@@ -48,7 +48,7 @@ class EarningAutomationController extends BaseController
         $totalEvents = (clone $query)->count();
 
         $dateGroups = (clone $query)
-            ->selectRaw('DATE(company_earnings.payment_date) as payment_date')
+            ->select(DB::raw('DATE(company_earnings.payment_date) as payment_date'))
             ->groupBy('payment_date')
             ->orderBy('payment_date', 'desc')
             ->paginate($perPage)
