@@ -41,6 +41,11 @@ class SubscriptionPlanSeeder extends Seeder
                 'slug' => 'Histórico de composição',
                 'status' => true,
             ],
+            'allow_automations' => [
+                'name' => 'automations',
+                'slug' => 'Automações',
+                'status' => true,
+            ],
         ];
 
         $plans = [
@@ -60,6 +65,7 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 1,
                     'allow_full_crossing' => false,
                     'allow_composition_history' => false,
+                    'allow_automations' => false,
                 ],
             ],
             [
@@ -78,6 +84,7 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 2,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
+                    'allow_automations' => true,
                 ],
             ],
             [
@@ -96,6 +103,7 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => 4,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
+                    'allow_automations' => true,
                 ],
             ],
             [
@@ -114,6 +122,7 @@ class SubscriptionPlanSeeder extends Seeder
                     'max_accounts' => null,
                     'allow_full_crossing' => true,
                     'allow_composition_history' => true,
+                    'allow_automations' => true,
                 ],
             ],
         ];

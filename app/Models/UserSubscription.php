@@ -123,7 +123,7 @@ class UserSubscription extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')
+        return $query->whereIn('status', ['active', 'trialing'])
             ->where(function ($q) {
                 $q->whereNull('ends_at')
                     ->orWhere('ends_at', '>', Carbon::now());

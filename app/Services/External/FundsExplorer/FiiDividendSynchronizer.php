@@ -268,7 +268,7 @@ class FiiDividendSynchronizer
             [
                 'mes' => -1,
                 'ano' => 0,
-                'ticker' => strtolower($ticker),
+                'ticker' => strtoupper(trim($ticker)),
             ],
             $nonce
         );
@@ -423,10 +423,17 @@ class FiiDividendSynchronizer
         }
 
         $this->earningTypeCache = EarningType::query()
-            ->where('key', 'REN')
+            ->where('key', 'REND')
             ->orWhere('name', 'LIKE', '%RENDIMENTO%')
-            ->orWhere('label', 'REN')
+            ->orWhere('label', 'RENDIMENTOS')
             ->first();
+
+        if (! $this->earningTypeCache) {
+            $this->earningTypeCache = EarningType::query()
+                ->where('key', 'REN')
+                ->orWhere('label', 'REN')
+                ->first();
+        }
 
         return $this->earningTypeCache;
     }

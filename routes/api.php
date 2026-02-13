@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SubscriptionPlanController;
 use App\Http\Controllers\Api\UserSubscriptionController;
 use App\Http\Controllers\Api\EarningController;
 use App\Http\Controllers\Api\EarningTypeController;
+use App\Http\Controllers\Api\EarningAutomationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +53,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/earnings/summary', [EarningController::class, 'summary'])->name('earnings.summary');
     Route::get('/earnings/grouped', [EarningController::class, 'grouped'])->name('earnings.grouped');
     Route::apiResource('earnings', EarningController::class);
+    Route::get('/automations/earnings', [EarningAutomationController::class, 'index'])
+        ->name('automations.earnings.index');
+    Route::post('/automations/earnings/{companyEarning}/consolidate', [EarningAutomationController::class, 'consolidate'])
+        ->name('automations.earnings.consolidate');
+    Route::post('/automations/earnings/{companyEarning}/register', [EarningAutomationController::class, 'register'])
+        ->name('automations.earnings.register');
+    Route::post('/automations/earnings/{companyEarning}/divergence', [EarningAutomationController::class, 'divergence'])
+        ->name('automations.earnings.divergence');
+    Route::post('/automations/earnings/consolidate-batch', [EarningAutomationController::class, 'consolidateBatch'])
+        ->name('automations.earnings.consolidate-batch');
+    Route::post('/automations/earnings/register-batch', [EarningAutomationController::class, 'registerBatch'])
+        ->name('automations.earnings.register-batch');
 
     Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index'])->name('subscription-plans.index');
     Route::get('/subscription-plans/{plan}', [SubscriptionPlanController::class, 'show'])->name('subscription-plans.show');
