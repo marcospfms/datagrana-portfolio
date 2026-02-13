@@ -167,20 +167,27 @@ class SubscriptionLimitService
 
     public function canUseAutomations(User $user): bool
     {
+        $hasTrialing = $user->subscriptions()
+            ->where('status', 'trialing')
+            ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '>', now())
+            ->exists();
+
+        if ($hasTrialing) {
+            return true;
+        }
+
         $subscription = $this->getActiveSubscription($user);
 
         if (! $subscription->hasFeature('allow_automations')) {
             return false;
         }
 
-        $isTrialActive = $subscription->isTrialing()
-            || ($subscription->trial_ends_at && now()->isBefore($subscription->trial_ends_at));
-
-        if (! $subscription->isActive() && ! $isTrialActive) {
+        if (! $subscription->isActive()) {
             return false;
         }
 
-        return $subscription->is_paid || $isTrialActive;
+        return $subscription->is_paid;
     }
 
     public function ensureCanUseAutomations(User $user): void
@@ -331,6 +338,8 @@ class SubscriptionLimitService
         $subscription = $user->subscriptions()
             ->active()
             ->orderByDesc('is_paid')
+            ->orderByRaw('trial_ends_at is null')
+            ->orderByDesc('trial_ends_at')
             ->orderByDesc('created_at')
             ->first();
 

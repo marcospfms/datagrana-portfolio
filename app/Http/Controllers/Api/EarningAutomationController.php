@@ -63,6 +63,13 @@ class EarningAutomationController extends BaseController
                 return $item->payment_date ?? null;
             })
             ->filter()
+            ->map(function ($date) {
+                if ($date instanceof \Carbon\CarbonInterface) {
+                    return $date->toDateString();
+                }
+
+                return (string) $date;
+            })
             ->values();
 
         $grouped = collect();
@@ -126,30 +133,27 @@ class EarningAutomationController extends BaseController
             return $this->sendError('Provento nao encontrado.', [], 404);
         }
 
+        $companyEarning->load('earningType');
+
+        $dividend = $this->automationService->findExactDividendFor($request->user(), $companyEarning);
+
+        if (! $dividend) {
+            return $this->sendError('Nenhum lancamento encontrado para consolidacao automatica.', [], 422);
+        }
+
+        $calculatedValues = $companyEarning->calculateValues((float) $dividend->quantity);
+
         try {
-            DB::beginTransaction();
-
-            $companyEarning->load('earningType');
-
-            $dividend = $this->automationService->findExactDividendFor($request->user(), $companyEarning);
-
-            if (! $dividend) {
-                return $this->sendError('Nenhum lancamento encontrado para consolidacao automatica.', [], 422);
-            }
-
-            $calculatedValues = $companyEarning->calculateValues((float) $dividend->quantity);
-
-            $dividend->update([
-                'company_earning_id' => $companyEarning->id,
-                'gross_value' => $calculatedValues['gross_value'],
-                'tax' => $calculatedValues['tax'],
-            ]);
-
-            DB::commit();
+            DB::transaction(function () use ($dividend, $companyEarning, $calculatedValues) {
+                $dividend->update([
+                    'company_earning_id' => $companyEarning->id,
+                    'gross_value' => $calculatedValues['gross_value'],
+                    'tax' => $calculatedValues['tax'],
+                ]);
+            });
 
             return $this->sendResponse([], 'Provento consolidado com sucesso.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->sendError('Erro ao consolidar provento.', ['error' => $e->getMessage()], 422);
         }
     }
@@ -162,49 +166,46 @@ class EarningAutomationController extends BaseController
             return $this->sendError('Provento nao encontrado.', [], 404);
         }
 
+        $user = $request->user();
+        $accountId = (int) $request->input('account_id');
+
+        if (! $user->accounts()->whereKey($accountId)->exists()) {
+            return $this->sendError('Conta nao autorizada.', [], 403);
+        }
+
+        $companyEarning->load('earningType');
+
+        $quantityUntilApproved = $this->automationService
+            ->getQuantityForTicker($user, $companyEarning->company_ticker_id);
+
+        $calculatedValues = $companyEarning->calculateValues($quantityUntilApproved);
+
         try {
-            DB::beginTransaction();
+            DB::transaction(function () use ($accountId, $companyEarning, $quantityUntilApproved, $calculatedValues) {
+                $consolidated = Consolidated::firstOrCreate([
+                    'account_id' => $accountId,
+                    'company_ticker_id' => $companyEarning->company_ticker_id,
+                ], [
+                    'quantity_current' => 0,
+                    'average_purchase_price' => 0,
+                    'total_purchased' => 0,
+                ]);
 
-            $companyEarning->load('earningType');
-
-            $user = $request->user();
-            $accountId = (int) $request->input('account_id');
-
-            if (! $user->accounts()->whereKey($accountId)->exists()) {
-                return $this->sendError('Conta nao autorizada.', [], 403);
-            }
-
-            $consolidated = Consolidated::firstOrCreate([
-                'account_id' => $accountId,
-                'company_ticker_id' => $companyEarning->company_ticker_id,
-            ], [
-                'quantity_current' => 0,
-                'average_purchase_price' => 0,
-                'total_purchased' => 0,
-            ]);
-
-            $quantityUntilApproved = $this->automationService
-                ->getQuantityForTicker($user, $companyEarning->company_ticker_id);
-
-            $calculatedValues = $companyEarning->calculateValues($quantityUntilApproved);
-
-            Earning::create([
-                'consolidated_id' => $consolidated->id,
-                'earning_type_id' => $companyEarning->earning_type_id,
-                'company_earning_id' => $companyEarning->id,
-                'date' => $companyEarning->payment_date,
-                'quantity' => $quantityUntilApproved,
-                'net_value' => $calculatedValues['net_value'],
-                'gross_value' => $calculatedValues['gross_value'],
-                'tax' => $calculatedValues['tax'],
-                'imported_with' => 'Sync',
-            ]);
-
-            DB::commit();
+                Earning::create([
+                    'consolidated_id' => $consolidated->id,
+                    'earning_type_id' => $companyEarning->earning_type_id,
+                    'company_earning_id' => $companyEarning->id,
+                    'date' => $companyEarning->payment_date,
+                    'quantity' => $quantityUntilApproved,
+                    'net_value' => $calculatedValues['net_value'],
+                    'gross_value' => $calculatedValues['gross_value'],
+                    'tax' => $calculatedValues['tax'],
+                    'imported_with' => 'Sync',
+                ]);
+            });
 
             return $this->sendResponse([], 'Provento registrado com sucesso.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->sendError('Erro ao registrar provento.', ['error' => $e->getMessage()], 422);
         }
     }
@@ -219,27 +220,41 @@ class EarningAutomationController extends BaseController
             return $this->sendError('Provento nao encontrado.', [], 404);
         }
 
+        $companyEarning->load('earningType');
+
+        $userAccountIds = $request->user()->accounts()->pluck('id')->all();
+
+        $earning = Earning::whereHas('consolidated', function ($query) use ($userAccountIds) {
+            $query->whereIn('account_id', $userAccountIds);
+        })->findOrFail((int) $request->input('earning_id'));
+
+        $manterValoresOriginais = $request->boolean('manter_valores_originais');
+
+        $quantity = null;
+        $calculatedValues = null;
+
+        if (! $manterValoresOriginais) {
+            $quantityUntilApproved = $this->automationService
+                ->getQuantityForTicker($request->user(), $companyEarning->company_ticker_id);
+
+            $quantity = $quantityUntilApproved > 0 ? $quantityUntilApproved : (float) $earning->quantity;
+            $calculatedValues = $companyEarning->calculateValues($quantity);
+        }
+
         try {
-            DB::beginTransaction();
-
-            $companyEarning->load('earningType');
-
-            $userAccountIds = $request->user()->accounts()->pluck('id')->all();
-
-            $earning = Earning::whereHas('consolidated', function ($query) use ($userAccountIds) {
-                $query->whereIn('account_id', $userAccountIds);
-            })->findOrFail((int) $request->input('earning_id'));
-
-            if ($request->boolean('manter_valores_originais')) {
-                $earning->update([
-                    'company_earning_id' => $companyEarning->id,
-                ]);
-            } else {
-                $quantityUntilApproved = $this->automationService
-                    ->getQuantityForTicker($request->user(), $companyEarning->company_ticker_id);
-
-                $quantity = $quantityUntilApproved > 0 ? $quantityUntilApproved : (float) $earning->quantity;
-                $calculatedValues = $companyEarning->calculateValues($quantity);
+            DB::transaction(function () use (
+                $earning,
+                $companyEarning,
+                $manterValoresOriginais,
+                $quantity,
+                $calculatedValues
+            ) {
+                if ($manterValoresOriginais) {
+                    $earning->update([
+                        'company_earning_id' => $companyEarning->id,
+                    ]);
+                    return;
+                }
 
                 $earning->update([
                     'earning_type_id' => $companyEarning->earning_type_id,
@@ -249,13 +264,10 @@ class EarningAutomationController extends BaseController
                     'gross_value' => $calculatedValues['gross_value'],
                     'tax' => $calculatedValues['tax'],
                 ]);
-            }
-
-            DB::commit();
+            });
 
             return $this->sendResponse([], 'Divergencia corrigida com sucesso.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->sendError('Erro ao corrigir divergencia.', ['error' => $e->getMessage()], 422);
         }
     }
@@ -265,38 +277,37 @@ class EarningAutomationController extends BaseController
         $this->limitService->ensureCanUseAutomations($request->user());
 
         try {
-            DB::beginTransaction();
+            $consolidated = DB::transaction(function () use ($request) {
+                $pagamentos = $this->automationService->getHydratedPendingPayments($request->user(), false);
 
-            $pagamentos = $this->automationService->getHydratedPendingPayments($request->user(), false);
+                $count = 0;
 
-            $consolidated = 0;
+                foreach ($pagamentos as $pagamento) {
+                    if (
+                        $pagamento->quantity_current_until_approved_date > 0
+                        && $pagamento->dividend_registered
+                        && is_null($pagamento->dividend_registered->company_earning_id)
+                    ) {
+                        $pagamento->load('earningType');
 
-            foreach ($pagamentos as $pagamento) {
-                if (
-                    $pagamento->quantity_current_until_approved_date > 0
-                    && $pagamento->dividend_registered
-                    && is_null($pagamento->dividend_registered->company_earning_id)
-                ) {
-                    $pagamento->load('earningType');
+                        $dividend = $pagamento->dividend_registered;
+                        $calculatedValues = $pagamento->calculateValues((float) $dividend->quantity);
 
-                    $dividend = $pagamento->dividend_registered;
-                    $calculatedValues = $pagamento->calculateValues((float) $dividend->quantity);
-
-                    $dividend->update([
-                        'earning_type_id' => $pagamento->earning_type_id,
-                        'company_earning_id' => $pagamento->id,
-                        'gross_value' => $calculatedValues['gross_value'],
-                        'tax' => $calculatedValues['tax'],
-                    ]);
-                    $consolidated++;
+                        $dividend->update([
+                            'earning_type_id' => $pagamento->earning_type_id,
+                            'company_earning_id' => $pagamento->id,
+                            'gross_value' => $calculatedValues['gross_value'],
+                            'tax' => $calculatedValues['tax'],
+                        ]);
+                        $count++;
+                    }
                 }
-            }
 
-            DB::commit();
+                return $count;
+            });
 
             return $this->sendResponse([], "{$consolidated} proventos consolidados com sucesso.");
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->sendError('Erro ao consolidar proventos.', ['error' => $e->getMessage()], 422);
         }
     }
@@ -305,66 +316,65 @@ class EarningAutomationController extends BaseController
     {
         $this->limitService->ensureCanUseAutomations($request->user());
 
+        $user = $request->user();
+        $accountId = (int) $request->input('account_id');
+
+        if (! $user->accounts()->whereKey($accountId)->exists()) {
+            return $this->sendError('Conta nao autorizada.', [], 403);
+        }
+
         try {
-            DB::beginTransaction();
+            $registered = DB::transaction(function () use ($user, $accountId) {
+                $pagamentos = $this->automationService->getHydratedPendingPayments($user, true);
 
-            $user = $request->user();
-            $accountId = (int) $request->input('account_id');
+                $count = 0;
 
-            if (! $user->accounts()->whereKey($accountId)->exists()) {
-                return $this->sendError('Conta nao autorizada.', [], 403);
-            }
+                foreach ($pagamentos as $pagamento) {
+                    $possibleDividends = $pagamento->possible_dividend_registered;
+                    $hasNoPossibleDividends = $possibleDividends instanceof Collection
+                        ? $possibleDividends->isEmpty()
+                        : empty($possibleDividends);
 
-            $pagamentos = $this->automationService->getHydratedPendingPayments($user, true);
+                    if (
+                        $pagamento->quantity_current_until_approved_date > 0
+                        && is_null($pagamento->dividend_registered)
+                        && $hasNoPossibleDividends
+                    ) {
+                        $consolidated = Consolidated::firstOrCreate([
+                            'account_id' => $accountId,
+                            'company_ticker_id' => $pagamento->company_ticker_id,
+                        ], [
+                            'quantity_current' => 0,
+                            'average_purchase_price' => 0,
+                            'total_purchased' => 0,
+                        ]);
 
-            $registered = 0;
+                        $pagamento->load('earningType');
 
-            foreach ($pagamentos as $pagamento) {
-                $possibleDividends = $pagamento->possible_dividend_registered;
-                $hasNoPossibleDividends = $possibleDividends instanceof Collection
-                    ? $possibleDividends->isEmpty()
-                    : empty($possibleDividends);
+                        $calculatedValues = $pagamento->calculateValues(
+                            (float) $pagamento->quantity_current_until_approved_date
+                        );
 
-                if (
-                    $pagamento->quantity_current_until_approved_date > 0
-                    && is_null($pagamento->dividend_registered)
-                    && $hasNoPossibleDividends
-                ) {
-                    $consolidated = Consolidated::firstOrCreate([
-                        'account_id' => $accountId,
-                        'company_ticker_id' => $pagamento->company_ticker_id,
-                    ], [
-                        'quantity_current' => 0,
-                        'average_purchase_price' => 0,
-                        'total_purchased' => 0,
-                    ]);
-
-                    $pagamento->load('earningType');
-
-                    $calculatedValues = $pagamento->calculateValues(
-                        (float) $pagamento->quantity_current_until_approved_date
-                    );
-
-                    Earning::create([
-                        'consolidated_id' => $consolidated->id,
-                        'earning_type_id' => $pagamento->earning_type_id,
-                        'company_earning_id' => $pagamento->id,
-                        'date' => $pagamento->payment_date,
-                        'quantity' => $pagamento->quantity_current_until_approved_date,
-                        'net_value' => $calculatedValues['net_value'],
-                        'gross_value' => $calculatedValues['gross_value'],
-                        'tax' => $calculatedValues['tax'],
-                        'imported_with' => 'Sync',
-                    ]);
-                    $registered++;
+                        Earning::create([
+                            'consolidated_id' => $consolidated->id,
+                            'earning_type_id' => $pagamento->earning_type_id,
+                            'company_earning_id' => $pagamento->id,
+                            'date' => $pagamento->payment_date,
+                            'quantity' => $pagamento->quantity_current_until_approved_date,
+                            'net_value' => $calculatedValues['net_value'],
+                            'gross_value' => $calculatedValues['gross_value'],
+                            'tax' => $calculatedValues['tax'],
+                            'imported_with' => 'Sync',
+                        ]);
+                        $count++;
+                    }
                 }
-            }
 
-            DB::commit();
+                return $count;
+            });
 
             return $this->sendResponse([], "{$registered} proventos inseridos com sucesso.");
         } catch (\Exception $e) {
-            DB::rollBack();
             return $this->sendError('Erro ao inserir proventos.', ['error' => $e->getMessage()], 422);
         }
     }

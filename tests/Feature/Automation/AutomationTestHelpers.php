@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\UserSubscription;
 use App\Services\SubscriptionLimitService;
 use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 
 trait AutomationTestHelpers
 {
@@ -36,7 +37,7 @@ trait AutomationTestHelpers
             'price_monthly' => $plan->price_monthly,
             'limits_snapshot' => $plan->getLimitsArray(),
             'features_snapshot' => $plan->getFeaturesArray(),
-            'status' => 'active',
+            'status' => 'trialing',
             'starts_at' => now(),
             'trial_ends_at' => now()->addDays(7),
             'is_paid' => false,
@@ -153,7 +154,7 @@ trait AutomationTestHelpers
         ];
     }
 
-    protected function createZeroQuantityCompanyEarning(User $user, Carbon $firstPurchaseDate): CompanyEarning
+    protected function createZeroQuantityCompanyEarning(User $user, CarbonInterface $firstPurchaseDate): CompanyEarning
     {
         $account = Account::factory()->create(['user_id' => $user->id]);
         $ticker = CompanyTicker::factory()->create();

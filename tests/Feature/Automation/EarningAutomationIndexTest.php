@@ -22,7 +22,9 @@ class EarningAutomationIndexTest extends TestCase
             ->assertJsonPath('data.summary.count_not_registered', 1)
             ->assertJsonPath('data.summary.count_divergences', 1);
 
-        $ids = collect($response->json('data.data'))->pluck('id')->all();
+        $ids = collect($response->json('data.data'))
+            ->flatMap(fn ($group) => collect($group['data'] ?? [])->pluck('id'))
+            ->all();
         $this->assertContains($scenario['companyEarningConsolidate']->id, $ids);
         $this->assertContains($scenario['companyEarningDivergence']->id, $ids);
         $this->assertContains($scenario['companyEarningNotRegistered']->id, $ids);
@@ -39,7 +41,9 @@ class EarningAutomationIndexTest extends TestCase
 
         $response->assertStatus(200);
 
-        $ids = collect($response->json('data.data'))->pluck('id')->all();
+        $ids = collect($response->json('data.data'))
+            ->flatMap(fn ($group) => collect($group['data'] ?? [])->pluck('id'))
+            ->all();
         $this->assertNotContains($zeroQuantity->id, $ids);
         $this->assertContains($scenario['companyEarningConsolidate']->id, $ids);
     }
