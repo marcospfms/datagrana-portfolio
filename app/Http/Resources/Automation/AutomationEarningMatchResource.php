@@ -17,6 +17,7 @@ class AutomationEarningMatchResource extends JsonResource
             'earning_type' => [
                 'id' => $this->earning_type_id,
                 'name' => $this->earningType?->name,
+                'short_name' => $this->earningType?->short_name,
                 'label' => $this->earningType?->label,
             ],
             'consolidated' => [

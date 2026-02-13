@@ -34,6 +34,7 @@ class AutomationEarningResource extends JsonResource
             'earning_type' => [
                 'id' => $this->earningType?->id,
                 'name' => $this->earningType?->name,
+                'short_name' => $this->earningType?->short_name,
                 'label' => $this->earningType?->label,
             ],
             'quantity_current_until_approved_date' => $this->quantity_current_until_approved_date ?? 0,
