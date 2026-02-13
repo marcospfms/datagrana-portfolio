@@ -273,7 +273,7 @@ class FiiDividendSynchronizer
             [
                 'mes' => -1,
                 'ano' => 0,
-                'ticker' => strtolower($ticker),
+                'ticker' => strtoupper(trim($ticker)),
             ],
             $nonce
         );
