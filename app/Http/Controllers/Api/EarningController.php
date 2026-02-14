@@ -91,13 +91,18 @@ class EarningController extends BaseController
 
             $groupedMap = $sorted
                 ->groupBy(fn (Earning $earning) => $earning->date?->toDateString() ?? '0000-00-00')
-                ->map(fn ($items, $date) => [
-                    'date' => $date,
-                    'data' => EarningResource::collection($items)->values(),
-                ]);
+                ->map(function ($items, $date) {
+                    $totalNet = $items->sum(fn (Earning $earning) => (float) ($earning->net_value ?? 0));
+
+                    return [
+                        'date' => $date,
+                        'total_net' => number_format($totalNet, 8, '.', ''),
+                        'data' => EarningResource::collection($items)->values(),
+                    ];
+                });
 
             $grouped = $dates
-                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'data' => []]))
+                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'total_net' => '0', 'data' => []]))
                 ->values();
         }
 
