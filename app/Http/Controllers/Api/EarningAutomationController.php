@@ -24,7 +24,7 @@ class EarningAutomationController extends BaseController
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = max(1, (int) $request->get('per_page', 10));
+        $perPage = max(1, (int) $request->get('per_page', 5));
         $query = $this->automationService->pendingCompanyEarningsQuery($request->user());
 
         if (! $query) {

@@ -33,7 +33,7 @@ class ConsolidatedController extends BaseController
         ]);
 
         $accountIds = $request->user()->accounts()->pluck('id')->all();
-        $perPage = 10;
+        $perPage = 5;
         $baseQuery = Consolidated::whereIn('account_id', $accountIds)->closed();
         $totalClosed = (clone $baseQuery)->count();
 
@@ -77,7 +77,7 @@ class ConsolidatedController extends BaseController
         ]);
 
         $accountIds = $request->user()->accounts()->pluck('id')->all();
-        $perPage = 10;
+        $perPage = 5;
         $subscription = $limitService->ensureUserHasSubscription($request->user());
         $maxPositions = $subscription->getLimit('max_positions');
         $allowedIds = null;
@@ -173,7 +173,7 @@ class ConsolidatedController extends BaseController
             ->sortByDesc('date')
             ->values();
 
-        $perPage = 10;
+        $perPage = 5;
         $page = (int) request()->query('page', 1);
         $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
             $transactions->forPage($page, $perPage)->values(),
