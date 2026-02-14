@@ -92,13 +92,19 @@ class EarningAutomationController extends BaseController
 
             $groupedMap = $filtered
                 ->groupBy(fn ($item) => $item->payment_date?->toDateString() ?? '0000-00-00')
-                ->map(fn ($items, $date) => [
-                    'date' => $date,
-                    'data' => AutomationEarningResource::collection($items)->values(),
-                ]);
+                ->map(function ($items, $date) {
+                    $totalNet = collect($items)
+                        ->sum(fn ($item) => (float) ($item->calculated_net_value ?? 0));
+
+                    return [
+                        'date' => $date,
+                        'total_net' => number_format($totalNet, 8, '.', ''),
+                        'data' => AutomationEarningResource::collection($items)->values(),
+                    ];
+                });
 
             $grouped = $dates
-                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'data' => []]))
+                ->map(fn ($date) => $groupedMap->get($date, ['date' => $date, 'total_net' => '0', 'data' => []]))
                 ->values();
         }
 
