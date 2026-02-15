@@ -248,12 +248,24 @@ class EarningAutomationService
             return null;
         }
 
-        $positionsSubquery = Consolidated::query()
-            ->selectRaw('company_ticker_id, MIN(created_at) as first_date_purchase')
-            ->whereIn('account_id', $accountIds)
-            ->whereNotNull('company_ticker_id')
-            ->where('quantity_current', '>', 0)
-            ->groupBy('company_ticker_id');
+        $positionsSubquery = CompanyTransaction::query()
+            ->join('consolidated', 'company_transactions.consolidated_id', '=', 'consolidated.id')
+            ->whereIn('consolidated.account_id', $accountIds)
+            ->whereNotNull('consolidated.company_ticker_id')
+            ->groupBy('consolidated.company_ticker_id')
+            ->selectRaw('
+                consolidated.company_ticker_id as company_ticker_id,
+                MIN(CASE WHEN company_transactions.operation = "C" THEN company_transactions.date END) as first_purchase_date,
+                MAX(company_transactions.date) as last_trade_date,
+                SUM(
+                    CASE
+                        WHEN company_transactions.operation = "C" THEN company_transactions.quantity
+                        WHEN company_transactions.operation = "V" THEN -company_transactions.quantity
+                        ELSE 0
+                    END
+                ) as current_quantity_until_now
+            ')
+            ->havingRaw('SUM(CASE WHEN company_transactions.operation = "C" THEN company_transactions.quantity ELSE 0 END) > 0');
 
         $query = CompanyEarning::query()
             ->with(['companyTicker.company.category.coin', 'earningType'])
@@ -264,14 +276,19 @@ class EarningAutomationService
             ->whereNotNull('company_earnings.payment_date')
             ->whereNotNull('company_earnings.approved_date')
             ->whereDate('company_earnings.payment_date', '<=', now())
-            ->whereRaw('DATE(company_earnings.approved_date) >= DATE(user_positions.first_date_purchase)')
+            ->whereRaw('DATE(company_earnings.approved_date) >= DATE(user_positions.first_purchase_date)')
+            ->where(function ($query) {
+                $query
+                    ->whereRaw('user_positions.current_quantity_until_now > 0')
+                    ->orWhereRaw('DATE(company_earnings.approved_date) <= DATE(user_positions.last_trade_date)');
+            })
             ->whereDoesntHave('earnings', function ($query) use ($accountIds) {
                 $query->whereHas('consolidated', function ($subQuery) use ($accountIds) {
                     $subQuery->whereIn('account_id', $accountIds);
                 });
             })
             ->orderBy('company_earnings.payment_date', 'desc')
-            ->select('company_earnings.*', 'user_positions.first_date_purchase');
+            ->select('company_earnings.*', 'user_positions.first_purchase_date');
 
         if (! empty($companyEarningIds)) {
             $query->whereIn('company_earnings.id', $companyEarningIds);
