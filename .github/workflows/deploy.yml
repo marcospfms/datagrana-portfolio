@@ -153,20 +153,11 @@ jobs:
       - name: Buscar tags
         run: git fetch --prune --tags
 
-      - name: Capturar mensagem do ultimo commit
-        id: commit_message
-        run: |
-          {
-            echo 'message<<EOF'
-            git log -1 --pretty=%B
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
       - name: Calcular nova versao e criar tag
         id: versioning
         run: |
-          set -e
-          LAST_COMMIT_MESSAGE="${{ steps.commit_message.outputs.message }}"
+          set -euo pipefail
+          LAST_COMMIT_MESSAGE="$(git log -1 --pretty=%B)"
           echo "Last commit message -> $LAST_COMMIT_MESSAGE"
 
           shopt -s nocasematch
@@ -195,7 +186,7 @@ jobs:
             exit 1
           fi
 
-          echo "new_tag=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_tag=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
           git tag -a "$NEW_VERSION" -m "$LAST_COMMIT_MESSAGE"
           git push origin --tags || { echo "git push failed"; git tag; git show-ref --tags; exit 1; }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Automation;
 
+use App\Models\CompanyTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -53,5 +54,35 @@ class EarningAutomationIndexTest extends TestCase
         $response = $this->getJson('/api/automations/earnings');
 
         $response->assertStatus(401);
+    }
+
+    public function test_includes_closed_positions_when_holding_existed_on_approved_date(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $scenario = $this->buildAutomationScenario($auth['user']);
+
+        CompanyTransaction::factory()->create([
+            'consolidated_id' => $scenario['consolidated']->id,
+            'date' => now()->subHours(1),
+            'operation' => 'V',
+            'quantity' => 5,
+            'price' => 10,
+            'total_value' => 50,
+        ]);
+
+        $scenario['consolidated']->update([
+            'quantity_current' => 0,
+            'closed' => true,
+        ]);
+
+        $response = $this->getJson('/api/automations/earnings', $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200);
+
+        $ids = collect($response->json('data.data'))
+            ->flatMap(fn ($group) => collect($group['data'] ?? [])->pluck('id'))
+            ->all();
+
+        $this->assertContains($scenario['companyEarningConsolidate']->id, $ids);
     }
 }
