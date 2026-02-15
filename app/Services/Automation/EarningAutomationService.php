@@ -244,6 +244,7 @@ class EarningAutomationService
     {
         $accountIds = $this->getUserAccountIds($user);
         $recentClosedStartDate = now()->subMonthNoOverflow()->startOfMonth()->toDateString();
+        $automationWindowStartDate = now()->subMonthsNoOverflow(12)->startOfDay()->toDateString();
 
         if (empty($accountIds)) {
             return null;
@@ -276,6 +277,7 @@ class EarningAutomationService
             ->where('company_earnings.status', true)
             ->whereNotNull('company_earnings.payment_date')
             ->whereNotNull('company_earnings.approved_date')
+            ->whereDate('company_earnings.payment_date', '>=', $automationWindowStartDate)
             ->whereDate('company_earnings.payment_date', '<=', now())
             ->whereRaw('DATE(company_earnings.approved_date) >= DATE(user_positions.first_purchase_date)')
             ->where(function ($query) use ($recentClosedStartDate) {
