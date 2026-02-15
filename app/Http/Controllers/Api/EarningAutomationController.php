@@ -181,9 +181,20 @@ class EarningAutomationController extends BaseController
         }
 
         $companyEarning->load('earningType');
+        $approvedDate = $companyEarning->approved_date instanceof Carbon
+            ? $companyEarning->approved_date
+            : Carbon::parse($companyEarning->approved_date);
 
         $quantityUntilApproved = $this->automationService
-            ->getQuantityForTicker($user, $companyEarning->company_ticker_id);
+            ->getQuantityUntilApprovedDate($user, $companyEarning->company_ticker_id, $approvedDate);
+
+        if ($quantityUntilApproved <= 0) {
+            return $this->sendError(
+                'Nao ha quantidade elegivel para registro na data de aprovacao do provento.',
+                [],
+                422
+            );
+        }
 
         $calculatedValues = $companyEarning->calculateValues($quantityUntilApproved);
 
