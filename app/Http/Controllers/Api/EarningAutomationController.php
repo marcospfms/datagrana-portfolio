@@ -13,6 +13,7 @@ use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class EarningAutomationController extends BaseController
@@ -240,8 +241,16 @@ class EarningAutomationController extends BaseController
         $calculatedValues = null;
 
         if (! $manterValoresOriginais) {
+            $approvedDate = $companyEarning->approved_date instanceof Carbon
+                ? $companyEarning->approved_date
+                : Carbon::parse($companyEarning->approved_date);
+
             $quantityUntilApproved = $this->automationService
-                ->getQuantityForTicker($request->user(), $companyEarning->company_ticker_id);
+                ->getQuantityUntilApprovedDate(
+                    $request->user(),
+                    $companyEarning->company_ticker_id,
+                    $approvedDate
+                );
 
             $quantity = $quantityUntilApproved > 0 ? $quantityUntilApproved : (float) $earning->quantity;
             $calculatedValues = $companyEarning->calculateValues($quantity);
