@@ -243,6 +243,7 @@ class EarningAutomationService
     private function buildPendingCompanyEarningsQuery(User $user, ?array $companyEarningIds = null): ?Builder
     {
         $accountIds = $this->getUserAccountIds($user);
+        $recentClosedStartDate = now()->subMonthNoOverflow()->startOfMonth()->toDateString();
 
         if (empty($accountIds)) {
             return null;
@@ -277,10 +278,16 @@ class EarningAutomationService
             ->whereNotNull('company_earnings.approved_date')
             ->whereDate('company_earnings.payment_date', '<=', now())
             ->whereRaw('DATE(company_earnings.approved_date) >= DATE(user_positions.first_purchase_date)')
-            ->where(function ($query) {
+            ->where(function ($query) use ($recentClosedStartDate) {
                 $query
                     ->whereRaw('user_positions.current_quantity_until_now > 0')
-                    ->orWhereRaw('DATE(company_earnings.approved_date) <= DATE(user_positions.last_trade_date)');
+                    ->orWhere(function ($closedQuery) use ($recentClosedStartDate) {
+                        $closedQuery
+                            ->whereRaw('user_positions.current_quantity_until_now <= 0')
+                            ->whereRaw('DATE(user_positions.last_trade_date) >= ?', [$recentClosedStartDate])
+                            ->whereDate('company_earnings.payment_date', '>=', $recentClosedStartDate)
+                            ->whereRaw('DATE(company_earnings.approved_date) <= DATE(user_positions.last_trade_date)');
+                    });
             })
             ->whereDoesntHave('earnings', function ($query) use ($accountIds) {
                 $query->whereHas('consolidated', function ($subQuery) use ($accountIds) {

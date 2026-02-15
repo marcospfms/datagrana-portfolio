@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Automation;
 
+use App\Models\CompanyEarning;
 use App\Models\CompanyTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -84,5 +85,44 @@ class EarningAutomationIndexTest extends TestCase
             ->all();
 
         $this->assertContains($scenario['companyEarningConsolidate']->id, $ids);
+    }
+
+    public function test_excludes_old_closed_positions_outside_recent_window(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $scenario = $this->buildAutomationScenario($auth['user']);
+
+        $oldEligibleEarning = CompanyEarning::factory()->create([
+            'company_ticker_id' => $scenario['ticker']->id,
+            'earning_type_id' => $scenario['earningType']->id,
+            'approved_date' => now()->subMonths(4),
+            'payment_date' => now()->subMonths(4)->addDays(2),
+            'value' => 1.2,
+            'status' => true,
+        ]);
+
+        CompanyTransaction::factory()->create([
+            'consolidated_id' => $scenario['consolidated']->id,
+            'date' => now()->subMonths(3),
+            'operation' => 'V',
+            'quantity' => 5,
+            'price' => 10,
+            'total_value' => 50,
+        ]);
+
+        $scenario['consolidated']->update([
+            'quantity_current' => 0,
+            'closed' => true,
+        ]);
+
+        $response = $this->getJson('/api/automations/earnings', $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200);
+
+        $ids = collect($response->json('data.data'))
+            ->flatMap(fn ($group) => collect($group['data'] ?? [])->pluck('id'))
+            ->all();
+
+        $this->assertNotContains($oldEligibleEarning->id, $ids);
     }
 }
