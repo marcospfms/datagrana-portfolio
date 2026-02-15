@@ -125,4 +125,30 @@ class EarningAutomationIndexTest extends TestCase
 
         $this->assertNotContains($oldEligibleEarning->id, $ids);
     }
+
+    public function test_excludes_open_positions_with_payment_older_than_12_months(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $scenario = $this->buildAutomationScenario($auth['user']);
+
+        $oldOpenEarning = CompanyEarning::factory()->create([
+            'company_ticker_id' => $scenario['ticker']->id,
+            'earning_type_id' => $scenario['earningType']->id,
+            'approved_date' => now()->subMonths(13)->subDays(2),
+            'payment_date' => now()->subMonths(13),
+            'value' => 1.1,
+            'status' => true,
+        ]);
+
+        $response = $this->getJson('/api/automations/earnings', $this->authHeaders($auth['token']));
+
+        $response->assertStatus(200);
+
+        $ids = collect($response->json('data.data'))
+            ->flatMap(fn ($group) => collect($group['data'] ?? [])->pluck('id'))
+            ->all();
+
+        $this->assertNotContains($oldOpenEarning->id, $ids);
+        $this->assertContains($scenario['companyEarningConsolidate']->id, $ids);
+    }
 }
