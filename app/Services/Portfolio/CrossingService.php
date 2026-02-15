@@ -137,6 +137,7 @@ class CrossingService
         }
 
         $result = [];
+        $windowStart = now()->subMonthsNoOverflow(12)->startOfDay();
 
         foreach ($consolidated as $item) {
             if (!$item->company_ticker_id) {
@@ -161,9 +162,7 @@ class CrossingService
             }
 
             $earnings = $item->earnings()
-                ->orderByDesc('date')
-                ->orderByDesc('id')
-                ->take(12)
+                ->whereDate('date', '>=', $windowStart)
                 ->get(['net_value', 'quantity']);
 
             if ($earnings->isEmpty()) {
@@ -176,10 +175,11 @@ class CrossingService
                 continue;
             }
 
-            $totalValues = (float) $earnings->sum('net_value');
-            $totalQuantities = (float) $earnings->sum('quantity');
+            $annualPerShare = (float) $earnings
+                ->filter(fn ($earning) => (float) ($earning->quantity ?? 0) > 0)
+                ->sum(fn ($earning) => (float) $earning->net_value / (float) $earning->quantity);
 
-            if ($totalQuantities <= 0) {
+            if ($annualPerShare <= 0) {
                 $result[$item->id] = [
                     'yield_monthly' => 0.0,
                     'yield_on_cost_monthly' => 0.0,
@@ -189,10 +189,10 @@ class CrossingService
                 continue;
             }
 
-            $averagePerShare = $totalValues / $totalQuantities;
+            $monthlyPerShare = $annualPerShare / 12;
             $currentPrice = (float) ($item->companyTicker?->last_price ?? $averagePurchasePrice);
-            $yieldMonthly = $currentPrice > 0 ? ($averagePerShare / $currentPrice) * 100 : 0.0;
-            $yieldOnCostMonthly = ($averagePerShare / $averagePurchasePrice) * 100;
+            $yieldMonthly = $currentPrice > 0 ? ($monthlyPerShare / $currentPrice) * 100 : 0.0;
+            $yieldOnCostMonthly = ($monthlyPerShare / $averagePurchasePrice) * 100;
 
             $result[$item->id] = [
                 'yield_monthly' => $yieldMonthly,
