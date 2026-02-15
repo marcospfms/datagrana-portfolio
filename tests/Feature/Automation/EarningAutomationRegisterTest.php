@@ -4,6 +4,7 @@ namespace Tests\Feature\Automation;
 
 use App\Models\Account;
 use App\Models\CompanyEarning;
+use App\Models\CompanyTransaction;
 use App\Models\EarningType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -124,5 +125,81 @@ class EarningAutomationRegisterTest extends TestCase
         );
 
         $response->assertStatus(200);
+    }
+
+    public function test_register_uses_quantity_until_approved_date_even_when_position_is_closed_now(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $this->createPaidSubscription($auth['user']);
+        $scenario = $this->buildAutomationScenario($auth['user']);
+
+        CompanyTransaction::factory()->create([
+            'consolidated_id' => $scenario['consolidated']->id,
+            'date' => now()->subHours(2),
+            'operation' => 'V',
+            'quantity' => 5,
+            'price' => 10,
+            'total_value' => 50,
+        ]);
+
+        $scenario['consolidated']->update([
+            'quantity_current' => 0,
+            'closed' => true,
+        ]);
+
+        $response = $this->postJson(
+            "/api/automations/earnings/{$scenario['companyEarningNotRegistered']->id}/register",
+            ['account_id' => $scenario['account']->id],
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(200);
+
+        $earning = \App\Models\Earning::where('company_earning_id', $scenario['companyEarningNotRegistered']->id)
+            ->firstOrFail();
+
+        $this->assertEqualsWithDelta(10.0, (float) $earning->quantity, 0.001);
+    }
+
+    public function test_register_returns_422_when_no_quantity_exists_on_approved_date(): void
+    {
+        $auth = $this->createAuthenticatedUser();
+        $this->createPaidSubscription($auth['user']);
+        $scenario = $this->buildAutomationScenario($auth['user']);
+
+        $companyEarning = CompanyEarning::factory()->create([
+            'company_ticker_id' => $scenario['ticker']->id,
+            'earning_type_id' => $scenario['earningType']->id,
+            'approved_date' => now(),
+            'payment_date' => now(),
+            'value' => 1.0,
+            'status' => true,
+        ]);
+
+        CompanyTransaction::factory()->create([
+            'consolidated_id' => $scenario['consolidated']->id,
+            'date' => now()->subHours(1),
+            'operation' => 'V',
+            'quantity' => 5,
+            'price' => 10,
+            'total_value' => 50,
+        ]);
+
+        $scenario['consolidated']->update([
+            'quantity_current' => 0,
+            'closed' => true,
+        ]);
+
+        $response = $this->postJson(
+            "/api/automations/earnings/{$companyEarning->id}/register",
+            ['account_id' => $scenario['account']->id],
+            $this->authHeaders($auth['token'])
+        );
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseMissing('earnings', [
+            'company_earning_id' => $companyEarning->id,
+        ]);
     }
 }
