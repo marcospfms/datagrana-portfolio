@@ -139,6 +139,7 @@ class PortfolioHelper
                 'yield_monthly' => 0,
                 'yield_annual' => 0,
                 'yield_on_cost_annual' => 0,
+                'months_with_earnings' => 0,
                 'is_gold_yoc' => false,
                 'yoc_medal' => 'bronze',
             ];
@@ -182,6 +183,7 @@ class PortfolioHelper
                 $crossingData[$key]['yield_on_cost_monthly'] = $yieldOnCostMonthly;
                 $crossingData[$key]['yield_annual'] = (float) ($yieldMetrics['yield_annual'] ?? 0);
                 $crossingData[$key]['yield_on_cost_annual'] = (float) ($yieldMetrics['yield_on_cost_annual'] ?? 0);
+                $crossingData[$key]['months_with_earnings'] = (int) ($yieldMetrics['months_with_earnings'] ?? 0);
                 $crossingData[$key]['is_gold_yoc'] = $yieldOnCostMonthly >= 1;
                 $crossingData[$key]['yoc_medal'] = self::resolveYocMedal($yieldOnCostMonthly);
                 $toBuyQuantity = self::calculateToBuyQuantity(
@@ -263,6 +265,7 @@ class PortfolioHelper
                     'yield_monthly' => (float) ($yieldMetrics['yield_monthly'] ?? 0),
                     'yield_annual' => (float) ($yieldMetrics['yield_annual'] ?? 0),
                     'yield_on_cost_annual' => (float) ($yieldMetrics['yield_on_cost_annual'] ?? 0),
+                    'months_with_earnings' => (int) ($yieldMetrics['months_with_earnings'] ?? 0),
                     'is_gold_yoc' => $yieldOnCostMonthly >= 1,
                     'yoc_medal' => self::resolveYocMedal($yieldOnCostMonthly),
                 ];

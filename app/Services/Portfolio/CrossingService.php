@@ -7,6 +7,7 @@ use App\Models\Consolidated;
 use App\Models\Portfolio;
 use App\Models\User;
 use App\Services\SubscriptionLimitService;
+use Illuminate\Support\Carbon;
 
 class CrossingService
 {
@@ -146,6 +147,7 @@ class CrossingService
                     'yield_on_cost_monthly' => 0.0,
                     'yield_annual' => 0.0,
                     'yield_on_cost_annual' => 0.0,
+                    'months_with_earnings' => 0,
                 ];
                 continue;
             }
@@ -157,13 +159,14 @@ class CrossingService
                     'yield_on_cost_monthly' => 0.0,
                     'yield_annual' => 0.0,
                     'yield_on_cost_annual' => 0.0,
+                    'months_with_earnings' => 0,
                 ];
                 continue;
             }
 
             $earnings = $item->earnings()
                 ->whereDate('date', '>=', $windowStart)
-                ->get(['net_value', 'quantity']);
+                ->get(['net_value', 'quantity', 'date']);
 
             if ($earnings->isEmpty()) {
                 $result[$item->id] = [
@@ -171,34 +174,46 @@ class CrossingService
                     'yield_on_cost_monthly' => 0.0,
                     'yield_annual' => 0.0,
                     'yield_on_cost_annual' => 0.0,
+                    'months_with_earnings' => 0,
                 ];
                 continue;
             }
 
-            $annualPerShare = (float) $earnings
-                ->filter(fn ($earning) => (float) ($earning->quantity ?? 0) > 0)
-                ->sum(fn ($earning) => (float) $earning->net_value / (float) $earning->quantity);
+            $monthlyPerShare = [];
+            foreach ($earnings as $earning) {
+                $quantity = (float) ($earning->quantity ?? 0);
+                if ($quantity <= 0 || empty($earning->date)) {
+                    continue;
+                }
 
-            if ($annualPerShare <= 0) {
+                $monthKey = (string) Carbon::parse($earning->date)->format('Y-m');
+                $valuePerShare = (float) ($earning->net_value ?? 0) / $quantity;
+                $monthlyPerShare[$monthKey] = ($monthlyPerShare[$monthKey] ?? 0.0) + $valuePerShare;
+            }
+
+            $monthsWithEarnings = count($monthlyPerShare);
+            if ($monthsWithEarnings <= 0) {
                 $result[$item->id] = [
                     'yield_monthly' => 0.0,
                     'yield_on_cost_monthly' => 0.0,
                     'yield_annual' => 0.0,
                     'yield_on_cost_annual' => 0.0,
+                    'months_with_earnings' => 0,
                 ];
                 continue;
             }
 
-            $monthlyPerShare = $annualPerShare / 12;
+            $monthlyPerShareAverage = array_sum($monthlyPerShare) / $monthsWithEarnings;
             $currentPrice = (float) ($item->companyTicker?->last_price ?? $averagePurchasePrice);
-            $yieldMonthly = $currentPrice > 0 ? ($monthlyPerShare / $currentPrice) * 100 : 0.0;
-            $yieldOnCostMonthly = ($monthlyPerShare / $averagePurchasePrice) * 100;
+            $yieldMonthly = $currentPrice > 0 ? ($monthlyPerShareAverage / $currentPrice) * 100 : 0.0;
+            $yieldOnCostMonthly = ($monthlyPerShareAverage / $averagePurchasePrice) * 100;
 
             $result[$item->id] = [
                 'yield_monthly' => $yieldMonthly,
                 'yield_on_cost_monthly' => $yieldOnCostMonthly,
                 'yield_annual' => $yieldMonthly * 12,
                 'yield_on_cost_annual' => $yieldOnCostMonthly * 12,
+                'months_with_earnings' => $monthsWithEarnings,
             ];
         }
 
