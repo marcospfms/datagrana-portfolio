@@ -179,20 +179,11 @@ class CrossingService
                 continue;
             }
 
-            $monthlyPerShare = [];
-            foreach ($earnings as $earning) {
-                $quantity = (float) ($earning->quantity ?? 0);
-                if ($quantity <= 0 || empty($earning->date)) {
-                    continue;
-                }
+            $annualPerShare = (float) $earnings
+                ->filter(fn ($earning) => (float) ($earning->quantity ?? 0) > 0)
+                ->sum(fn ($earning) => (float) $earning->net_value / (float) $earning->quantity);
 
-                $monthKey = (string) Carbon::parse($earning->date)->format('Y-m');
-                $valuePerShare = (float) ($earning->net_value ?? 0) / $quantity;
-                $monthlyPerShare[$monthKey] = ($monthlyPerShare[$monthKey] ?? 0.0) + $valuePerShare;
-            }
-
-            $monthsWithEarnings = count($monthlyPerShare);
-            if ($monthsWithEarnings <= 0) {
+            if ($annualPerShare <= 0) {
                 $result[$item->id] = [
                     'yield_monthly' => 0.0,
                     'yield_on_cost_monthly' => 0.0,
@@ -203,7 +194,13 @@ class CrossingService
                 continue;
             }
 
-            $monthlyPerShareAverage = array_sum($monthlyPerShare) / $monthsWithEarnings;
+            $monthsWithEarnings = (int) $earnings
+                ->filter(fn ($earning) => !empty($earning->date))
+                ->map(fn ($earning) => Carbon::parse($earning->date)->format('Y-m'))
+                ->unique()
+                ->count();
+
+            $monthlyPerShareAverage = $annualPerShare / 12;
             $currentPrice = (float) ($item->companyTicker?->last_price ?? $averagePurchasePrice);
             $yieldMonthly = $currentPrice > 0 ? ($monthlyPerShareAverage / $currentPrice) * 100 : 0.0;
             $yieldOnCostMonthly = ($monthlyPerShareAverage / $averagePurchasePrice) * 100;
