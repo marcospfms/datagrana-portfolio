@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { dashboard } from '@/routes';
+// import { dashboard } from '@/routes';
 
 // Contador animado para prova social
 const userCount = ref(0);
@@ -142,7 +142,8 @@ const testimonials = [
                     <img src="/storage/images/icon-transparent.png" alt="DataGrana" class="w-8 h-8 sm:w-10 sm:h-10" />
                     <div>
                         <span class="text-sm sm:text-lg font-bold text-[#fef6ea]">Datagrana App</span>
-                        <p class="text-[10px] sm:text-xs text-[#b9d6d0] hidden sm:block">Carteiras reais, decisões claras.</p>
+                        <p class="text-[10px] sm:text-xs text-[#b9d6d0] hidden sm:block">Carteiras reais, decisões
+                            claras.</p>
                     </div>
                 </div>
 
@@ -157,13 +158,11 @@ const testimonials = [
 
                 <div class="flex items-center gap-2 sm:gap-4">
                     <template v-if="$page.props.auth.user">
-                        <Link :href="dashboard()"
-                            class="px-4 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all text-sm">
-                            Dashboard
-                        </Link>
+
                     </template>
                     <template v-else>
-                        <a href="https://play.google.com/store" target="_blank" rel="noopener"
+                        <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp"
+                            target="_blank" rel="noopener"
                             class="px-3 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-[#17a2b8]/30 hover:scale-105 transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path
@@ -215,7 +214,8 @@ const testimonials = [
                         </div>
 
                         <!-- Headline -->
-                        <h1 class="text-3xl sm:text-4xl lg:text-6xl font-bold text-[#fef6ea] leading-tight mb-4 sm:mb-6">
+                        <h1
+                            class="text-3xl sm:text-4xl lg:text-6xl font-bold text-[#fef6ea] leading-tight mb-4 sm:mb-6">
                             Seus investimentos
                             <span
                                 class="bg-linear-to-r from-[#17a2b8] to-[#3ec9c2] bg-clip-text text-transparent block">
@@ -230,13 +230,15 @@ const testimonials = [
                         <!-- Prova Social -->
                         <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
                             <div class="text-center">
-                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{ userCount.toLocaleString('pt-BR') }}+
+                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{
+                                    userCount.toLocaleString('pt-BR') }}+
                                 </div>
                                 <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Investidores</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{ portfolioCount.toLocaleString('pt-BR')
-                                }}+
+                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{
+                                    portfolioCount.toLocaleString('pt-BR')
+                                    }}+
                                 </div>
                                 <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Carteiras</div>
                             </div>
@@ -248,7 +250,8 @@ const testimonials = [
 
                         <!-- Store Badges -->
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <a href="https://play.google.com/store" target="_blank" rel="noopener"
+                            <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp/apps/details?id=com.mamedelabs.datagranaapp"
+                                target="_blank" rel="noopener"
                                 class="group flex items-center justify-center gap-3 px-4 sm:px-6 py-3 bg-white text-gray-900 rounded-xl transition-all hover:scale-105 hover:shadow-xl">
                                 <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="currentColor">
                                     <path
@@ -869,7 +872,7 @@ const testimonials = [
                         <!-- Descrição -->
                         <div class="text-center mt-4">
                             <h3 class="text-base font-bold text-[#fef6ea] mb-1">{{ screenshots[currentScreenshot].title
-                            }}
+                                }}
                             </h3>
                             <p class="text-sm text-[#cfe3df]">{{ screenshots[currentScreenshot].description }}</p>
                         </div>
@@ -879,7 +882,8 @@ const testimonials = [
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
+        <section id="features"
+            class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-10 sm:mb-16">
                     <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-3 sm:mb-4 px-4">
@@ -909,7 +913,8 @@ const testimonials = [
                 <div class="text-center mb-12 sm:mb-16">
                     <div
                         class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-4 sm:mb-6 backdrop-blur-sm">
-                        <span class="text-red-400 text-xs sm:text-sm font-semibold">⏰ Promoção de lançamento - 33% OFF nos 3
+                        <span class="text-red-400 text-xs sm:text-sm font-semibold">⏰ Promoção de lançamento - 33% OFF
+                            nos 3
                             primeiros
                             meses</span>
                     </div>
@@ -931,23 +936,27 @@ const testimonials = [
                             {{ plan.badge }}
                         </div>
 
-                        <h3 :class="['text-xl sm:text-2xl font-bold mb-2', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">{{
-                            plan.name }}</h3>
+                        <h3
+                            :class="['text-xl sm:text-2xl font-bold mb-2', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">
+                            {{
+                                plan.name }}</h3>
                         <p :class="['text-xs sm:text-sm mb-4', plan.highlight ? 'text-white/80' : 'text-[#cfe3df]']">{{
                             plan.description }}</p>
 
                         <div class="mb-5 sm:mb-6">
                             <div class="flex items-baseline gap-1">
-                                <span :class="['text-3xl sm:text-4xl font-bold', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">
+                                <span
+                                    :class="['text-3xl sm:text-4xl font-bold', plan.highlight ? 'text-white' : 'text-[#fef6ea]']">
                                     R$ {{ plan.price.toFixed(2).replace('.', ',') }}
                                 </span>
-                                <span :class="['text-base sm:text-lg', plan.highlight ? 'text-white/80' : 'text-[#b9d6d0]']">{{
-                                    plan.period }}</span>
+                                <span
+                                    :class="['text-base sm:text-lg', plan.highlight ? 'text-white/80' : 'text-[#b9d6d0]']">{{
+                                        plan.period }}</span>
                             </div>
                             <div v-if="plan.price > 0"
                                 :class="['text-xs sm:text-sm mt-1', plan.highlight ? 'text-white/70' : 'text-[#b9d6d0]']">
                                 <span class="line-through">R$ {{ (plan.price * 1.5).toFixed(2).replace('.', ',')
-                                }}</span>
+                                    }}</span>
                                 <span class="ml-2 font-semibold text-[#10B981]">33% OFF</span>
                             </div>
                         </div>
@@ -961,7 +970,9 @@ const testimonials = [
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                <span :class="['text-xs sm:text-sm', plan.highlight ? 'text-white' : 'text-[#cfe3df]']">{{ feature }}</span>
+                                <span
+                                    :class="['text-xs sm:text-sm', plan.highlight ? 'text-white' : 'text-[#cfe3df]']">{{
+                                        feature }}</span>
                             </li>
                             <li v-for="feature in plan.excludedFeatures" :key="'excluded-' + feature"
                                 class="flex items-start gap-2">
@@ -977,7 +988,8 @@ const testimonials = [
                             </li>
                         </ul>
 
-                        <a href="https://play.google.com/store" target="_blank" rel="noopener"
+                        <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp"
+                            target="_blank" rel="noopener"
                             :class="['block w-full py-3 rounded-lg font-bold text-center transition-all', plan.highlight ? 'bg-white text-[#17a2b8] hover:bg-gray-100' : 'bg-linear-to-r from-[#17a2b8] to-[#0d5f5f] text-white hover:shadow-lg hover:shadow-[#17a2b8]/30']">
                             {{ plan.price === 0 ? 'Baixar Grátis' : 'Assinar no App' }}
                         </a>
@@ -987,7 +999,8 @@ const testimonials = [
                 <div class="mt-8 sm:mt-12 text-center">
                     <div
                         class="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-[#10B981]/10 border-2 border-[#10B981]/30 rounded-xl backdrop-blur-sm">
-                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-[#10B981] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-[#10B981] shrink-0" fill="currentColor"
+                            viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                 clip-rule="evenodd" />
@@ -1060,7 +1073,8 @@ const testimonials = [
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                    <a href="https://play.google.com/store" target="_blank" rel="noopener"
+                    <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp" target="_blank"
+                        rel="noopener"
                         class="inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white text-gray-900 rounded-xl font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-xl">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
                             <path
