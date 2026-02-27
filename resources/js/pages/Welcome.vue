@@ -250,7 +250,7 @@ const testimonials = [
 
                         <!-- Store Badges -->
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp/apps/details?id=com.mamedelabs.datagranaapp"
+                            <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp"
                                 target="_blank" rel="noopener"
                                 class="group flex items-center justify-center gap-3 px-4 sm:px-6 py-3 bg-white text-gray-900 rounded-xl transition-all hover:scale-105 hover:shadow-xl">
                                 <svg class="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="currentColor">
