@@ -3,33 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 // import { dashboard } from '@/routes';
 
-// Contador animado para prova social
-const userCount = ref(0);
-const portfolioCount = ref(0);
-const targetUsers = 12847;
-const targetPortfolios = 45623;
-let countersInterval: ReturnType<typeof setInterval> | undefined;
 let autoplayInterval: ReturnType<typeof setInterval> | undefined;
-
-onMounted(() => {
-    const duration = 2000;
-    const steps = 60;
-    const userIncrement = targetUsers / steps;
-    const portfolioIncrement = targetPortfolios / steps;
-
-    let currentStep = 0;
-    countersInterval = setInterval(() => {
-        if (currentStep >= steps) {
-            clearInterval(countersInterval);
-            userCount.value = targetUsers;
-            portfolioCount.value = targetPortfolios;
-        } else {
-            userCount.value = Math.floor(userIncrement * currentStep);
-            portfolioCount.value = Math.floor(portfolioIncrement * currentStep);
-            currentStep++;
-        }
-    }, duration / steps);
-});
 
 // Carrossel de Screenshots
 const currentScreenshot = ref(0);
@@ -59,9 +33,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    if (countersInterval) {
-        clearInterval(countersInterval);
-    }
     if (autoplayInterval) {
         clearInterval(autoplayInterval);
     }
@@ -117,11 +88,6 @@ const features = [
     { icon: '🎯', title: 'Inteligente', description: 'Rebalanceamento automático' }
 ];
 
-const testimonials = [
-    { name: 'Carlos Silva', role: 'Investidor há 5 anos', avatar: 'CS', text: 'App sensacional! Acompanho meus FIIs e ações direto do celular com facilidade.' },
-    { name: 'Ana Paula', role: 'Analista Financeira', avatar: 'AP', text: 'A análise de crossing é perfeita. Sei exatamente o que comprar para rebalancear.' },
-    { name: 'Roberto Mendes', role: 'Investidor Pro', avatar: 'RM', text: 'Interface limpa e funcional. Melhor app de controle de investimentos!' }
-];
 </script>
 
 <template>
@@ -152,8 +118,6 @@ const testimonials = [
                         class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors font-medium text-sm">Recursos</a>
                     <a href="#pricing"
                         class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors font-medium text-sm">Preços</a>
-                    <a href="#testimonials"
-                        class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors font-medium text-sm">Depoimentos</a>
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-4">
@@ -226,27 +190,6 @@ const testimonials = [
                         <p class="text-base sm:text-xl text-[#cfe3df] mb-6 sm:mb-8 leading-relaxed">
                             Acompanhe tudo em um único painel. Posições consolidadas, metas e crossing em tempo real.
                         </p>
-
-                        <!-- Prova Social -->
-                        <div class="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
-                            <div class="text-center">
-                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{
-                                    userCount.toLocaleString('pt-BR') }}+
-                                </div>
-                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Investidores</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">{{
-                                    portfolioCount.toLocaleString('pt-BR')
-                                    }}+
-                                </div>
-                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Carteiras</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xl sm:text-3xl font-bold text-[#17a2b8]">R$ 2.4Bi+</div>
-                                <div class="text-[10px] sm:text-xs text-[#b9d6d0]">Patrimônio</div>
-                            </div>
-                        </div>
 
                         <!-- Store Badges -->
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -1014,7 +957,7 @@ const testimonials = [
             </div>
         </section>
 
-        <!-- Testimonials -->
+        <!-- Comentários de usuários (temporariamente comentado)
         <section id="testimonials"
             class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white/5 backdrop-blur-sm border-y border-white/10">
             <div class="max-w-7xl mx-auto">
@@ -1054,6 +997,7 @@ const testimonials = [
                 </div>
             </div>
         </section>
+        -->
 
         <!-- CTA Final -->
         <section class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
@@ -1124,8 +1068,6 @@ const testimonials = [
                             <li><a href="#pricing"
                                     class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors">Preços</a>
                             </li>
-                            <li><a href="#testimonials"
-                                    class="text-[#cfe3df] hover:text-[#17a2b8] transition-colors">Depoimentos</a></li>
                         </ul>
                     </div>
 
