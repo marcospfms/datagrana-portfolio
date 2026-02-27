@@ -169,12 +169,6 @@ const features = [
                                 <span class="text-[#17a2b8] text-sm font-semibold">📱 Aplicativo Mobile</span>
                             </div>
 
-                            <!-- Badge de Escassez -->
-                            <div
-                                class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-full backdrop-blur-sm">
-                                <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
-                                <span class="text-amber-400 text-sm font-semibold">🔥 Últimas 47 vagas - 33% OFF</span>
-                            </div>
                         </div>
 
                         <!-- Headline -->
@@ -854,14 +848,6 @@ const features = [
         <section id="pricing" class="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12 sm:mb-16">
-                    <div
-                        class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-4 sm:mb-6 backdrop-blur-sm">
-                        <span class="text-red-400 text-xs sm:text-sm font-semibold">⏰ Promoção de lançamento - 33% OFF
-                            nos 3
-                            primeiros
-                            meses</span>
-                    </div>
-
                     <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#fef6ea] mb-3 sm:mb-4 px-4">
                         Comece grátis, escale quando precisar
                     </h2>
@@ -895,12 +881,6 @@ const features = [
                                 <span
                                     :class="['text-base sm:text-lg', plan.highlight ? 'text-white/80' : 'text-[#b9d6d0]']">{{
                                         plan.period }}</span>
-                            </div>
-                            <div v-if="plan.price > 0"
-                                :class="['text-xs sm:text-sm mt-1', plan.highlight ? 'text-white/70' : 'text-[#b9d6d0]']">
-                                <span class="line-through">R$ {{ (plan.price * 1.5).toFixed(2).replace('.', ',')
-                                    }}</span>
-                                <span class="ml-2 font-semibold text-[#10B981]">33% OFF</span>
                             </div>
                         </div>
 
@@ -1009,12 +989,6 @@ const features = [
                 <p class="text-base sm:text-xl mb-4 sm:mb-6 text-[#cfe3df] px-4">
                     Junte-se a mais de 12.000 investidores que já estão tomando decisões mais assertivas
                 </p>
-
-                <div
-                    class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6 sm:mb-8 border border-white/20">
-                    <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
-                    <span class="text-xs sm:text-sm font-semibold text-amber-400">⚡ Últimas 47 vagas com 33% OFF</span>
-                </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
                     <a href="https://play.google.com/store/apps/details?id=com.mamedelabs.datagranaapp" target="_blank"
