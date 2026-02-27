@@ -75,8 +75,8 @@ const plans = [
         highlight: false,
         badge: 'Teste Grátis',
         description: 'Ideal para começar a organizar seus investimentos',
-        features: ['1 Carteira', 'Até 5 ativos', 'Até 5 posições ativas', '1 Conta bancária', 'Dashboard básico', 'Comparação Parcial'],
-        excludedFeatures: ['Histórico de composição']
+        features: ['1 Conta', 'Até 5 posições ativas', '1 Carteira', 'Até 5 ativos por carteira'],
+        excludedFeatures: ['Comparação completa', 'Histórico de composição', 'Proventos automáticos']
     },
     {
         name: 'Investidor Iniciante',
@@ -85,7 +85,7 @@ const plans = [
         highlight: false,
         badge: '',
         description: 'Para investidores começando a diversificar',
-        features: ['2 Carteiras', 'Até 10 ativos por carteira', 'Até 10 posições ativas', '2 Contas bancárias', 'Comparação completa (crossing)', 'Histórico de composição'],
+        features: ['Sem anúncios', '2 Contas', 'Até 10 posições ativas', '2 Carteiras', 'Até 10 ativos por carteira', 'Comparação completa', 'Histórico de composição', 'Proventos automáticos'],
         excludedFeatures: []
     },
     {
@@ -95,7 +95,7 @@ const plans = [
         highlight: true,
         badge: 'Mais Popular',
         description: 'Para investidores ativos com múltiplas estratégias',
-        features: ['4 Carteiras diferentes', 'Até 25 ativos por carteira', 'Até 25 posições ativas', '4 Contas bancárias', 'Comparação completa (crossing)', 'Histórico de composição'],
+        features: ['Sem anúncios', '4 Contas', 'Até 25 posições ativas', '4 Carteiras', 'Até 25 ativos por carteira', 'Comparação completa', 'Histórico de composição', 'Proventos automáticos'],
         excludedFeatures: []
     },
     {
@@ -105,7 +105,7 @@ const plans = [
         highlight: false,
         badge: 'Completo',
         description: 'Recursos ilimitados para investidores profissionais',
-        features: ['Carteiras ilimitadas', 'Ativos ilimitados', 'Posições ilimitadas', 'Contas ilimitadas', 'Comparação completa (crossing)', 'Histórico de composição'],
+        features: ['Sem anúncios', 'Contas ilimitadas', 'Posições ativas ilimitadas', 'Carteiras ilimitadas', 'Ativos por carteira ilimitados', 'Comparação completa', 'Histórico de composição', 'Proventos automáticos'],
         excludedFeatures: []
     }
 ];
