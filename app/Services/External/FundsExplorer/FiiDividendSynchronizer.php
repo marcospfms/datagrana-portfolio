@@ -635,8 +635,11 @@ class FiiDividendSynchronizer
                     Carbon::parse($data['payment_date'])->subDays(self::PAYMENT_DATE_TOLERANCE_DAYS)->toDateString(),
                     Carbon::parse($data['payment_date'])->addDays(self::PAYMENT_DATE_TOLERANCE_DAYS)->toDateString(),
                 ])
-                ->get()
-                ->first(fn (CompanyEarning $earning) => abs((float) $earning->value - (float) $data['value_per_quota']) <= self::VALUE_EPSILON);
+                ->whereBetween('value', [
+                    (float) $data['value_per_quota'] - self::VALUE_EPSILON,
+                    (float) $data['value_per_quota'] + self::VALUE_EPSILON,
+                ])
+                ->first();
 
             if ($nearMatch) {
                 return false;
