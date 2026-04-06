@@ -23,7 +23,7 @@ if (app()->environment('production')) {
         ->cron('0 4 * * 1')
         ->withoutOverlapping();
 
-    // Dividendos FII via Funds Explorer - diariamente 08:30
+    // Dividendos FII via agregadores - diariamente 08:30
     Schedule::command('app:sync-fundsexplorer-fii-dividends --only-active --limit=50 --window-days=30 --min-delay=60 --max-delay=120')
         ->dailyAt('08:30')
         ->withoutOverlapping()
