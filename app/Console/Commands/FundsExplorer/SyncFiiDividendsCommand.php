@@ -20,7 +20,7 @@ class SyncFiiDividendsCommand extends Command
         {--max-delay=120 : Delay maximo (segundos) entre tickers}
         {--force : Ignora regras de janela e ultima execucao}';
 
-    protected $description = 'Sincroniza dividendos de FIIs via Funds Explorer (AJAX)';
+    protected $description = 'Sincroniza dividendos de FIIs via Status Invest, Funds Explorer e Clube FII';
 
     public function __construct(private readonly FiiDividendSynchronizer $synchronizer)
     {
@@ -47,7 +47,7 @@ class SyncFiiDividendsCommand extends Command
                 return self::SUCCESS;
             }
 
-            $this->info("Processando {$tickers->count()} ticker(s) de FII via Funds Explorer...");
+            $this->info("Processando {$tickers->count()} ticker(s) de FII via fontes agregadas...");
 
             $summary = $this->synchronizer->syncTickers(
                 tickers: $tickers,
